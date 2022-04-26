@@ -18,8 +18,8 @@
 4. 本家リポジトリを登録 (upstreamという名前でなくてもいい)
 
     ```bash
-    $ cd B4Lecture-2021
-    $ git remote add upstream https://github.com/TakedaLab/B4Lecture-2021.git
+    $ cd B4Lecture-2022
+    $ git remote add upstream https://github.com/TakedaLab/B4Lecture-2022.git
     ```
 
 
@@ -27,7 +27,7 @@
 
 1. masterブランチに戻る
   ```bash
-  $ cd B4Lecture-2021
+  $ cd B4Lecture-2022
   $ git checkout master
   ```
 2. 本家リポジトリから更新されたソースをマージする
