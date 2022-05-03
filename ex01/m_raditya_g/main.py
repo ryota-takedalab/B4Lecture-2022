@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import librosa as lb
 import soundfile as sf
 
+
 def istft(spectrogram, nperseg=1024, noverlap=256):
     """Compute an inverse short-time Fourier transform (STFT) from spectrogram data to audio signal
 
@@ -61,8 +62,8 @@ def main():
     # Reading Data and sample rate from audio, then convert the sample rate to 16kHz and channel to mono
     audio, samplerate = lb.load('exe1.wav', sr=16000, mono=True)
 
-    # Number of data and length for each audio
-    num = audio.shape[0]  # N-number of data
+    # Number of data and length (seconds) of the audio
+    num = audio.shape[0]
     length = num / samplerate
     print(f"audio length = {length}s")
 
@@ -73,7 +74,7 @@ def main():
     spectrum2 = istft(spectrum)
 
     # Prepare the plots figures
-    fig, ax = plt.subplots(3, 1, figsize=(10,10))
+    fig, ax = plt.subplots(3, 1, figsize=(10, 10))
     plt.subplots_adjust(hspace=0.4)
 
     # Subplot 1 (Frequency-time Domain plot for source input)
@@ -84,7 +85,8 @@ def main():
 
     # Subplot 2 (Spectrogram)
     # [:1024 // 2] is used so only the positive part is presented in spectrogram
-    ax[1].imshow(db(spectrum[:nperseg // 2]), origin='lower', cmap='viridis', extent=(0, length, 0, samplerate / 2 / 1000))
+    ax[1].imshow(db(spectrum[:nperseg // 2]), origin='lower', cmap='viridis',
+                 extent=(0, length, 0, samplerate / 2 / 1000))
     ax[1].axis('tight')
     ax[1].set_ylabel('Frequency [kHz]')
     ax[1].set_xlabel('Time [s]')
@@ -105,13 +107,12 @@ def main():
     fig2, ax2 = plt.subplots(2, 1, figsize=(10, 10))
 
     # Subplot 1 (Spectrogram used in Exercise)
-    ax2[0].imshow(db(spectrum[:nperseg // 2]), origin='lower', cmap='viridis', extent=(0, length, 0, samplerate / 2 / 1000))
+    ax2[0].imshow(db(spectrum[:nperseg // 2]), origin='lower', cmap='viridis',
+                  extent=(0, length, 0, samplerate / 2 / 1000))
     ax2[0].axis('tight')
     ax2[0].set_ylabel('Frequency [kHz]')
     ax2[0].set_xlabel('Time [s]')
     ax2[0].set_title('Spectrogram from Exercise Function')
-    cbar_ax = fig.add_axes([0.93, 0.39, 0.01, 0.205])
-    plt.colorbar(ax2[0].images[0], orientation="vertical", cax=cbar_ax)
 
     # Subplot 2 (Spectrogram from pre-built matplotlib.pyplot function)
     ax2[1].specgram(audio, Fs=samplerate)
@@ -119,8 +120,6 @@ def main():
     ax2[1].set_ylabel('Frequency [kHz]')
     ax2[1].set_xlabel('Time [s]')
     ax2[1].set_title('Spectrogram from Pre-built matplotlib.pyplot function')
-    cbar_ax = fig.add_axes([0.93, 0.39, 0.01, 0.205])
-    plt.colorbar(ax2[1].images[0], orientation="vertical", cax=cbar_ax)
     plt.show()
     fig2.savefig('ex1_spectrogram_comparison.png')
     plt.close()
