@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
@@ -71,8 +73,12 @@ def istft(Zxx, nperseg=512, noverlap=256):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='ex01 stft') 
+    parser.add_argument("-i", "--input", help="input file")
+    args = parser.parse_args()
+
     # read audio file
-    filename = "input.wav"
+    filename = args.input
     sampling_rate = 16000
     wav, _ = librosa.load(filename, sr=sampling_rate, mono=True)
 
@@ -90,21 +96,24 @@ if __name__ == '__main__':
     Zxx, t, f = stft(wav, sampling_rate)
 
     # plot stft
-    plt.title("stft")
-    librosa.display.specshow(np.abs(Zxx) ** 2,
+    plt.title("spectrogram")
+    librosa.display.specshow(20 * np.log10(np.abs(Zxx)),
                              sr=sampling_rate * 2,
                              x_axis="s",
-                             y_axis="linear")
+                             y_axis="hz",
+                            )
     plt.colorbar()
     plt.show()
-    # plt.savefig("stft.png")
-    plt.close()
+    plt.savefig("spectrogram.png")
+    # plt.close()
 
     # istft
     reconstructed = istft(Zxx)
+    # reconstructed = istft(np.abs(Zxx))
 
     # export istft result as wav
-    scipy.io.wavfile.write("reconstructed.wav", sampling_rate, reconstructed)
+    scipy.io.wavfile.write("reconstructed.wav", sampling_rate, 
+                            reconstructed.astype(np.float32))
 
     # plot istft
     t = np.linspace(0, len(reconstructed) / sampling_rate, len(reconstructed))
