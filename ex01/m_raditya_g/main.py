@@ -35,6 +35,7 @@ def stft(audio, nperseg=1024, noverlap=256):
 
     Returns:
         decibel (np.ndarray): The discrete short-time Fourier transform
+        nperseg (int): Length of each segment. (For making positive value only spectrogram)
     """
 
     win = np.hanning(nperseg)
@@ -84,7 +85,7 @@ def main():
     ax[0].set_title('Input Audio Frequency-time Graph')
 
     # Subplot 2 (Spectrogram)
-    # [:1024 // 2] is used so only the positive part is presented in spectrogram
+    # [:nperseg // 2] is used so only the positive part is presented in spectrogram
     ax[1].imshow(db(spectrum[:nperseg // 2]), origin='lower', cmap='viridis',
                  extent=(0, length, 0, samplerate / 2 / 1000))
     ax[1].axis('tight')
