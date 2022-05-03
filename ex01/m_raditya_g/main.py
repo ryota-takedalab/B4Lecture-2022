@@ -75,7 +75,7 @@ def main():
 
     # Prepare the plots figures
     fig, ax = plt.subplots(3, 1, figsize=(10, 10))
-    plt.subplots_adjust(hspace=0.4)
+    plt.subplots_adjust(hspace=0.45)
 
     # Subplot 1 (Frequency-time Domain plot for source input)
     ax[0].plot(np.arange(audio.shape[0]) / samplerate, audio)
