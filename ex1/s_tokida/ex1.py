@@ -15,7 +15,7 @@ def STFT(data, Fs, Fl, overlap):
         if len(shift_data) == Fs:
             windowed_data = win * shift_data
             fft_data = np.fft.fft(windowed_data)  # fft
-            spec.append(np.real(fft_data))
+            spec.append(fft_data)
             pos += (Fs-overlap)
 
     return spec
@@ -57,7 +57,8 @@ def main():
 
     ax2 = fig.add_subplot(312)  # Spectrogram
     spec_log = 20*np.log10(np.abs(spec))
-    im = ax2.imshow(spec_log.T, extent=[0, float(Fl)/samplerate, 0, samplerate], aspect='auto')
+    # changed here
+    im = ax2.imshow(spec_log[:, :512].T, extent=[0, float(Fl)/samplerate, 0, samplerate/2], aspect='auto',  origin = 'lower')
     divider_ax2 = make_axes_locatable(ax2)
     cax2 = divider_ax2.append_axes('right', size='2%', pad=0.1)
     cbar = fig.colorbar(im, cax=cax2)  # color bar
@@ -80,6 +81,7 @@ def main():
     ax1.set_position([axpos1.x0, axpos1.y0, axpos2.width, axpos1.height])
     ax3.set_position([axpos3.x0, axpos3.y0, axpos2.width, axpos3.height])
 
+    sf.write(file='ex1_tokida_complete.wav', data=ispec, samplerate=samplerate)  # wavFile by ISTFT
     plt.show()
     plt.close()
     fig.savefig('ex1_tokida_1024.png')
