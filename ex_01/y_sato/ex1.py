@@ -57,8 +57,8 @@ if __name__ == "__main__":
     spec_log = 20 * np.log10(np.abs(spec).T)[window // 2:] #dB
     im = ax2.imshow(spec_log,extent = [0,original_signal.shape[0] // sr,0,sr // 2,] ,aspect="auto")
 
-    ax2.set_yscale("log",base=2)
-    ax2.set_ylim([50,sr//2])
+    #ax2.set_yscale("log",base=2)
+    #ax2.set_ylim([50,sr//2])
     ax2.set_xlabel('Time [s]')
     ax2.set_ylabel('Frequency [Hz]')
 
