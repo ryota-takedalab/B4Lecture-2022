@@ -2,6 +2,7 @@ import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import soundfile as sf
 
 def STFT(signal,window,step):
     Z = []
@@ -18,7 +19,7 @@ def STFT(signal,window,step):
 def ISTFT(y,frame_length,window,step):
     Z = np.zeros(frame_length)
     for i in range(len(y)) :
-        tmp = np.fft.ifft(y[i]) #逆フーリエ変換
+        tmp = np.fft.ifft(y[i])
         Z[i*step : i*step + window] += np.real(tmp)
     Z= np.array(Z)
     return Z
@@ -31,8 +32,9 @@ if __name__ == "__main__":
     step = window//2
 
     #original_signal = 音声信号の値、sr=サンプリング周波数 を取得
-    original_signal, sr = librosa.load(file_name)
+    original_signal, sr = librosa.load(file_name,sr=None)
     frame_length = original_signal.shape[0]
+
     #時間軸
     time = np.arange(0,original_signal.shape[0]) / sr
 
@@ -68,11 +70,14 @@ if __name__ == "__main__":
     cbar.set_label("Magnitude [dB]")
     ax2.set_title("Spectrogram")
 
+    #Re-Synthesized Signal
     ax3 = fig.add_subplot(3,1,3)
     ax3.plot(time,ispec)
     ax3.set_xlabel("Time(s)")
     ax3.set_ylabel("Sound Amplitude")
     ax3.set_title("Re-Synthesized Signal")
 
+    sf.write("resynthesized.wav", ispec, sr, subtype="PCM_16")
     plt.tight_layout()
     plt.show()
+    plt.close()
