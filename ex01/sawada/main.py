@@ -2,6 +2,7 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import librosa
 import librosa.display
 import scipy.io.wavfile
@@ -73,7 +74,7 @@ def istft(Zxx, nperseg=512, noverlap=256):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='ex01 stft') 
+    parser = argparse.ArgumentParser(description='ex01 stft')
     parser.add_argument("-i", "--input", help="input file")
     args = parser.parse_args()
 
@@ -81,46 +82,47 @@ if __name__ == '__main__':
     filename = args.input
     sampling_rate = 16000
     wav, _ = librosa.load(filename, sr=sampling_rate, mono=True)
+    
+    # plot initialization
+    fig, ax = plt.subplots(3, 1, figsize=(10, 10))
+    fig.subplots_adjust(hspace=0.45)
 
     # preview audio
     t = np.linspace(0, len(wav) / sampling_rate, len(wav))
-    plt.title("input audio")
-    plt.plot(t, wav)
-    plt.xlabel("time(s)")
-    plt.ylabel("amplitude")
-    plt.show()
-    # plt.savefig("preview.png")
-    plt.close()
+    ax[0].set_title("input audio")
+    ax[0].plot(t, wav)
+    ax[0].set_xlabel("Time(s)")
+    ax[0].set_ylabel("Amplitude")
 
     # stft
     Zxx, t, f = stft(wav, sampling_rate)
 
     # plot stft
-    plt.title("spectrogram")
-    librosa.display.specshow(20 * np.log10(np.abs(Zxx)),
-                             sr=sampling_rate * 2,
-                             x_axis="s",
-                             y_axis="hz",
-                            )
-    plt.colorbar()
-    plt.show()
-    plt.savefig("spectrogram.png")
-    # plt.close()
+    ax[1].set_title("spectrogram")
+    im = ax[1].imshow(20 * np.log10(np.abs(Zxx)), cmap=plt.cm.jet,
+                      aspect="auto", extent=[t[0], t[-1], f[0], f[-1]])
+    ax[1].set_xlabel("Time (s)")
+    ax[1].set_ylabel("Frequency (Hz)")
+    # colorbar: https://sabopy.com/py/matplotlib-18/
+    divider = make_axes_locatable(ax[1])
+    cax = divider.append_axes("bottom", size="5%", pad=0.5)
+    plt.colorbar(im, cax=cax, orientation="horizontal")
 
     # istft
     reconstructed = istft(Zxx)
     # reconstructed = istft(np.abs(Zxx))
 
     # export istft result as wav
-    scipy.io.wavfile.write("reconstructed.wav", sampling_rate, 
-                            reconstructed.astype(np.float32))
+    scipy.io.wavfile.write("reconstructed.wav",
+                           sampling_rate,
+                           reconstructed.astype(np.float32))
 
     # plot istft
     t = np.linspace(0, len(reconstructed) / sampling_rate, len(reconstructed))
-    plt.title("istft")
-    plt.plot(t, reconstructed)
-    plt.xlabel("time(s)")
-    plt.ylabel("amplitude")
-    plt.show()
-    # plt.savefig("reconstructed.png")
+    ax[2].set_title("istft reconstructed audio")
+    ax[2].plot(t, reconstructed)
+    ax[2].set_xlabel("time(s)")
+    ax[2].set_ylabel("amplitude")
+    # plt.show()
+    plt.savefig("result.png")
     plt.close()
