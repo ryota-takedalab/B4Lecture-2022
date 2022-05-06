@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 import librosa.display
+import argparse
 
 
-def load_file():
-    file_path = "sample01.wav"
-    data, rate = librosa.load(file_path)
+def load_file(filename):
+    data, rate = librosa.load(filename, sr=None)
+    # print(rate)#44100
 
     return data, rate
 
@@ -22,11 +23,15 @@ def STFT(data, window=1024, step=512):
         width of cut signal
     step : Length of step size
     """
-    #window function
+    # window function
     win_fc = np.hamming(window)
 
     frame = (len(data)-window+step)//step
     spec = np.zeros([window//2+1, frame], dtype="complex64")
+
+    # use "for"
+    # -----------
+    """
     for i in range(frame):
         #start position to cut signal
         start = step*i
@@ -36,11 +41,25 @@ def STFT(data, window=1024, step=512):
 
         #fast fourier transform
         spec[:, i] = np.fft.rfft(window_signal)
-    
+    """
+    # -----------
+    # not use "for"
+    # -----------
+    framed_signal = np.lib.stride_tricks.as_strided(data, shape=(
+        window, frame), strides=(data.strides[0], data.strides[0]*step))
+
+    # win_fc.shape=(window,) -> win_fc[:,np.newaxis].shape=(window,1)
+    window_signal = framed_signal*win_fc[:, np.newaxis]
+
+    # fast fourier transform
+    spec = np.fft.rfft(window_signal, axis=0)
+
+    # -----------
+
     return spec
 
 
-def ISTFT(spec):
+def ISTFT(spec, window, step):
     """
     Invert Short Time Fourier Transform
 
@@ -48,61 +67,83 @@ def ISTFT(spec):
     ----------
     spec : Spectrogram data (np.array)
     """
-    spec_t=np.transpose(spec)
+
+    spec_t = np.transpose(spec)
+
+    ispec = np.fft.irfft(spec_t)
+    # print(ispec.shape)#(163,1024)
+    window = ispec.shape[1]
     
-    ispec=np.fft.irfft(spec_t)
-    #print(ispec.shape)#(163,1024)
-    window=ispec.shape[1]
-
-    left=ispec[:,:window//2]
-    right=ispec[:,window//2:]
-    ispec=left
-    ispec[1:]=ispec[1:]+right[:-1]
+    left = ispec[:, :window//2]
+    right = ispec[:, window//2:]
+    ispec = left
+    ispec[1:] = ispec[1:]+right[:-1]
     #ispec = (left[0], left[1]+right[0],...,left[511]+right[510])
-    #print(ispec.shape)#(163,512)
+    # print(ispec.shape)#(163,512)
 
-    resyn_signal=ispec.reshape(-1)
+    resyn_signal = ispec.reshape(-1)
+
     return resyn_signal
 
 
-def plot_function(win,rate,data,spec_db,resyn_data):
+def plot_function(win, rate, data, spec_db, resyn_data):
     """
     save graph as png
     """
-    fig0 = plt.figure()
-    ax0 = fig0.add_subplot(111)
+    fig = plt.figure(figsize=(10,8))
+
+    #Input Signal
+    ax0 = fig.add_subplot(311)
     librosa.display.waveshow(data, sr=rate)
     ax0.set(title="Input Signal", xlabel="Time[sec]", ylabel="Magnitude")
-    plt.savefig("InputSignal")
+    ax0.set_position([0.1,0.7,0.68,0.2])
 
-    fig1 = plt.figure()
-    ax1 = fig1.add_subplot(111)
+    #Spectrogram
+    ax1 = fig.add_subplot(312)
     img = librosa.display.specshow(
         spec_db, sr=rate, hop_length=win//2, x_axis="time", y_axis="linear")
     ax1.set(title="Spectrogram", xlabel="Time[sec]", ylabel="Frequency[Hz]")
-    fig1.colorbar(img, ax=ax1)
-    plt.savefig("Spectrogram")
+    ax1.set_position([0.1,0.3,1,0.25])
+    fig.colorbar(img, ax=ax1)
 
-    fig2 = plt.figure()
-    ax2 = fig2.add_subplot(111)
+    #Resynthesized Signal
+    ax2 = fig.add_subplot(313)
     librosa.display.waveshow(resyn_data, sr=rate)
-    ax2.set(title="Resynthesized Signal", xlabel="Time[sec]", ylabel="Magnitude")
-    plt.savefig("ResynthesizedSignal")
+    ax2.set(title="Resynthesized Signal",
+            xlabel="Time[sec]", ylabel="Magnitude")
+    ax2.set_position([0.1,0.1,0.68,0.2])
+
+    plt.savefig("Result")
 
 
 def main():
-    data, rate = load_file()
+    parser=argparse.ArgumentParser()
 
-    win = 1024
-    step = win//2
+    parser.add_argument("arg1",help="Wave File Name")
+    parser.add_argument("--win",help="Window")
+    parser.add_argument("--step",help="step")
+
+    args=parser.parse_args()
+
+    data, rate = load_file(args.arg1)
+
+    if(args.win==None):
+        win=1024
+    else:
+        win=int(args.win)
+    
+    if(args.step==None):
+        step=512
+    else:
+        step=int(args.step)
 
     spec = STFT(data, win, step)
     spec_db = librosa.amplitude_to_db(np.abs(spec))
 
-    resyn_data=ISTFT(spec)
+    resyn_data = ISTFT(spec, win, step)
 
-    plot_function(win,rate,data,spec_db, resyn_data)
-    
+    plot_function(win, rate, data, spec_db, resyn_data)
+
 
 if __name__ == "__main__":
     main()
