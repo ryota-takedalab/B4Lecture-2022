@@ -91,18 +91,21 @@ if __name__ == '__main__':
     t = np.linspace(0, len(wav) / sampling_rate, len(wav))
     ax[0].set_title("input audio")
     ax[0].plot(t, wav)
-    ax[0].set_xlabel("Time(s)")
+    ax[0].set_xlabel("Time [s]")
     ax[0].set_ylabel("Amplitude")
+    ax[0].set_xlim([t[0], t[-1]])
 
     # stft
     Zxx, t, f = stft(wav, sampling_rate)
 
     # plot stft
     ax[1].set_title("spectrogram")
-    im = ax[1].imshow(20 * np.log10(np.abs(Zxx)), cmap=plt.cm.jet,
-                      aspect="auto", extent=[t[0], t[-1], f[0], f[-1]])
-    ax[1].set_xlabel("Time (s)")
-    ax[1].set_ylabel("Frequency (Hz)")
+    im = ax[1].imshow(20 * np.log10(np.abs(np.flipud(Zxx[:Zxx.shape[0] // 2]))),
+                      cmap=plt.cm.jet,
+                      aspect="auto",
+                      extent=[t[0], t[-1], f[0], f[len(f) // 2]])
+    ax[1].set_xlabel("Time [s]")
+    ax[1].set_ylabel("Frequency [Hz]")
     # colorbar: https://sabopy.com/py/matplotlib-18/
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes("bottom", size="5%", pad=0.5)
@@ -121,8 +124,9 @@ if __name__ == '__main__':
     t = np.linspace(0, len(reconstructed) / sampling_rate, len(reconstructed))
     ax[2].set_title("istft reconstructed audio")
     ax[2].plot(t, reconstructed)
-    ax[2].set_xlabel("Time (s)")
+    ax[2].set_xlabel("Time [s]")
     ax[2].set_ylabel("Amplitude")
+    ax[2].set_xlim([t[0], t[-1]])
     # plt.show()
     plt.savefig("result.png")
     plt.close()
