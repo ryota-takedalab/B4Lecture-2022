@@ -50,16 +50,14 @@ def STFT(data, window=1024, step=512):
 
     # win_fc.shape=(window,) -> win_fc[:,np.newaxis].shape=(window,1)
     window_signal = framed_signal*win_fc[:, np.newaxis]
-
     # fast fourier transform
     spec = np.fft.rfft(window_signal, axis=0)
-
     # -----------
 
     return spec
 
 
-def ISTFT(spec, window, step):
+def ISTFT(spec):
     """
     Invert Short Time Fourier Transform
 
@@ -119,30 +117,20 @@ def plot_function(win, rate, data, spec_db, resyn_data):
 def main():
     parser=argparse.ArgumentParser()
 
-    parser.add_argument("arg1",help="Wave File Name")
-    parser.add_argument("--win",help="Window")
-    parser.add_argument("--step",help="step")
+    parser.add_argument("filename",help="Wave File Name")
+    parser.add_argument("--win",default=1024,help="Window")
+    parser.add_argument("--step",default=512,help="step")
 
     args=parser.parse_args()
 
-    data, rate = load_file(args.arg1)
+    data, rate = load_file(args.filename)
 
-    if(args.win==None):
-        win=1024
-    else:
-        win=int(args.win)
-    
-    if(args.step==None):
-        step=512
-    else:
-        step=int(args.step)
-
-    spec = STFT(data, win, step)
+    spec = STFT(data, args.win, args.step)
     spec_db = librosa.amplitude_to_db(np.abs(spec))
 
-    resyn_data = ISTFT(spec, win, step)
+    resyn_data = ISTFT(spec)
 
-    plot_function(win, rate, data, spec_db, resyn_data)
+    plot_function(args.win, rate, data, spec_db, resyn_data)
 
 
 if __name__ == "__main__":
