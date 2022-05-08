@@ -27,11 +27,12 @@ def STFT(data, window=1024, step=512):
     win_fc = np.hamming(window)
 
     frame = (len(data)-window+step)//step
-    spec = np.zeros([window//2+1, frame], dtype="complex64")
 
     # use "for"
     # -----------
     """
+    spec = np.zeros([window//2+1, frame], dtype="complex64")
+
     for i in range(frame):
         #start position to cut signal
         start = step*i
