@@ -49,7 +49,7 @@ def main():
     #PLOT
     t = np.arange(0, Fl)/samplerate  # time bar
 
-    fig = plt.figure(figsize=(8,6)) 
+    fig = plt.figure(figsize=(9,8)) 
     ax1 = fig.add_subplot(311)  # Original signal
     ax1.plot(t, data)
     ax1.set_ylabel('Magnitude')
@@ -58,7 +58,7 @@ def main():
     ax2 = fig.add_subplot(312)  # Spectrogram
     spec_log = 20*np.log10(np.abs(spec))
     # changed here
-    im = ax2.imshow(spec_log[:, :512].T, extent=[0, float(Fl)/samplerate, 0, samplerate/2], aspect='auto',  origin = 'lower')
+    im = ax2.imshow(spec_log[:, :Fs//2].T, extent=[0, float(Fl)/samplerate, 0, samplerate/2], aspect='auto',  origin = 'lower', cmap = 'hsv')
     divider_ax2 = make_axes_locatable(ax2)
     cax2 = divider_ax2.append_axes('right', size='2%', pad=0.1)
     cbar = fig.colorbar(im, cax=cax2)  # color bar
