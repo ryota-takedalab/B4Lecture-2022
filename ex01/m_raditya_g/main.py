@@ -1,7 +1,11 @@
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa as lb
 import soundfile as sf
+import time
+
+start = time.time()
 
 
 def istft(spectrogram, nperseg=256, noverlap=128):
@@ -26,7 +30,6 @@ def istft(spectrogram, nperseg=256, noverlap=128):
 
 def stft(audio, nperseg=256, noverlap=128):
     """Compute a discrete short-time Fourier transform (STFT) to an audio signal
-
     Args:
         audio (np.ndarray): Signal to be transformed
         nperseg (int): Length of each segment. (Default value = 256)
@@ -59,8 +62,18 @@ def db(spect):
 
 
 def main():
+    # Argparse
+    parser = argparse.ArgumentParser(description='Name of the Audio File')
+    parser.add_argument('-fn', metavar='-f', dest='filename', type=str, help='Enter the Audio File Name',
+                        required=True)
+    parser.add_argument('-sl', metavar='-s', dest='segment_length', type=int, help='Enter Segment Length',
+                        required=False)
+    parser.add_argument('-os', metavar='-o', dest='overlap_size', type=int, help='Enter Overlap Size',
+                        required=False)
+    args = parser.parse_args()
+
     # Reading Data and sample rate from audio, then convert the sample rate to 16kHz and channel to mono
-    audio, samplerate = lb.load('exe1.wav', sr=16000, mono=True)
+    audio, samplerate = lb.load(args.filename, sr=16000, mono=True)
 
     # Number of data and length (seconds) of the audio
     num = audio.shape[0]
@@ -68,10 +81,13 @@ def main():
     print(f"audio length = {length}s")
 
     # STFT the data
-    (spectrum, nperseg) = stft(audio)
+    (spectrum, nperseg) = stft(audio, nperseg=args.segment_length, noverlap=args.overlap_size)
 
     # ISTFT the spectrogram data
-    spectrum2 = istft(spectrum)
+    spectrum2 = istft(spectrum, nperseg=args.segment_length, noverlap=args.overlap_size)
+
+    # Performance check
+    print(time.time() - start)
 
     # Prepare the plots figures
     fig, ax = plt.subplots(3, 1, figsize=(10, 10))
@@ -92,6 +108,7 @@ def main():
     ax[1].set_xlabel('Time [s]')
     ax[1].set_title('Spectrogram')
     cbar_ax = fig.add_axes([0.93, 0.39, 0.01, 0.205])
+    cbar_ax.set_title('[dB]')
     plt.colorbar(ax[1].images[0], orientation="vertical", cax=cbar_ax)
 
     # Subplot 3 (Frequency-time Domain plot for Re-synthesized signal)
