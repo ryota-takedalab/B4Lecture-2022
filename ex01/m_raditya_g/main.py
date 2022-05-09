@@ -4,17 +4,17 @@ import librosa as lb
 import soundfile as sf
 
 
-def istft(spectrogram, nperseg=1024, noverlap=256):
+def istft(spectrogram, nperseg=256, noverlap=128):
     """Compute an inverse short-time Fourier transform (STFT) from spectrogram data to audio signal
 
         Args:
-            spectrogram (np.ndarray): Data to be transformed.
-            nperseg (int): Length of each segment. (Default value = 1024)
+            spectrogram (np.ndarray): Spectrogram data to be transformed.
+            nperseg (int): Length of each segment. (Default value = 256)
             noverlap (int): Number of points to overlap between segments. (Default value = 128)
 
 
         Returns:
-            decibel (np.ndarray): The discrete short-time Fourier transform.
+            new_audio (np.ndarray): The inverse short-time Fourier transform.
         """
 
     new_audio = np.zeros((spectrogram.shape[1]-1)*(nperseg - noverlap) + nperseg, dtype='complex_')
@@ -24,18 +24,18 @@ def istft(spectrogram, nperseg=1024, noverlap=256):
     return new_audio.astype('float32')
 
 
-# Make a function to Slice the frequency to 1024 Hz each for better performance
-def stft(audio, nperseg=1024, noverlap=256):
+def stft(audio, nperseg=256, noverlap=128):
     """Compute a discrete short-time Fourier transform (STFT) to an audio signal
 
     Args:
         audio (np.ndarray): Signal to be transformed
-        nperseg (int): Length of each segment. (Default value = 1024)
+        nperseg (int): Length of each segment. (Default value = 256)
         noverlap (int): Number of points to overlap between segments. (Default value = 128)
 
 
     Returns:
-        decibel (np.ndarray): The discrete short-time Fourier transform
+        spect.T (np.ndarray): Transpose of Transformed Audio Data
+        nperseg (int): Length of each segment. (Needed for taking the positive part of the spectrogram)
     """
 
     win = np.hanning(nperseg)
