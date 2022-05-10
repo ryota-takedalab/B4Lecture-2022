@@ -41,7 +41,7 @@
   ```
 3. 自分の名前のディレクトリを作成する
   ```bash
-  $ mkdir -p exXX/a_kuribayashi
+  $ mkdir -p exXX/d_yoshioka
   ```
 6. ディレクトリ内でスクリプトを作成する
 
