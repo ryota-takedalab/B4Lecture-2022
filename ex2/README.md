@@ -32,13 +32,13 @@
 
    - **割り振り**
 
-     * LPF: 
+     * LPF: Sawada, Tanaka
+     
+     * HPF: Sato, Hayakawa
 
-     * HPF: 
+     * BPF: Radit, Kobayashi
 
-     * BPF: 
-
-     * BEF: 
+     * BEF: Tokida
 
 3. 畳み込み  
 
