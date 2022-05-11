@@ -41,7 +41,7 @@
   ```
 3. 自分の名前のディレクトリを作成する
   ```bash
-  $ mkdir -p exXX/a_kuribayashi
+  $ mkdir -p exXX/d_yoshioka
   ```
 6. ディレクトリ内でスクリプトを作成する
 
@@ -78,7 +78,7 @@
 
 ## その他
 
-[演習を進める上でのコツ](Tips.md)
+[演習を進める上でのコツ](./Tips.md)
 
 [GitとGithubの理解](https://docs.google.com/a/g.sp.m.is.nagoya-u.ac.jp/viewer?a=v&pid=sites&srcid=Zy5zcC5tLmlzLm5hZ295YS11LmFjLmpwfHNwbG9jYWwtc2VtaXxneDoxZmI4YWVhZWVlNDBjNDY1)
 
