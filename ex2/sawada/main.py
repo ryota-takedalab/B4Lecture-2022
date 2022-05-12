@@ -191,6 +191,7 @@ if __name__ == "__main__":
     cax = divider.append_axes("bottom", size="5%", pad=0.5)
     plt.colorbar(im, cax=cax, orientation="horizontal")
 
+    """
     # HPF
     high_pass_filter = create_hpf(440)
     wav_hpf = apply_filter(wav, high_pass_filter)
@@ -211,6 +212,13 @@ if __name__ == "__main__":
     divider = make_axes_locatable(ax[2, 1])
     cax = divider.append_axes("bottom", size="5%", pad=0.5)
     plt.colorbar(im, cax=cax, orientation="horizontal")
+    """
+    
+    # filter preview
+    ax[2, 1].set_title("filter preview")
+    ax[2, 1].plot(low_pass_filter)
+    ax[2, 1].set_xlabel("sample [n]")
+    ax[2, 1].set_ylabel("magnification")
     
     # filter property
     filter_property = np.fft.fft(low_pass_filter)
