@@ -71,7 +71,22 @@ def apply_filter(audio, filter):
     Returns:
         ndarray: filtered audio
     """
-    return np.convolve(audio, filter)
+    # define variables often used
+    filter_length = len(filter)
+    filter_fliped = filter[::-1]
+    
+    # initialize return value
+    result = np.zeros(len(audio) + filter_length - 1)
+    
+    audio_extended = np.concatenate([
+        np.zeros(filter_length - 1),
+        audio,
+        np.zeros(filter_length - 1)])
+
+    # convolve
+    for i in range(len(result)):
+        result[i] = np.sum(filter_fliped * audio_extended[i: i + filter_length])
+    return result
 
 
 def stft(audio, fs, nperseg=512, noverlap=256):
