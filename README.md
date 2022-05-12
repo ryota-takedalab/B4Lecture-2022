@@ -84,7 +84,7 @@
 
 [スライドの作り方](https://www.slideshare.net/ShinnosukeTakamichi/ss-48987441)
 
-[PowerPointを使いやすくするために](https://docs.google.com/presentation/d/1objtyzG2RVHPMm0l42eDGsWPRsUQJtVe/edit?usp=sharing&ouid=104059354448949743591&rtpof=true&sd=true)
+[PowerPointを使いやすくするために](https://drive.google.com/file/d/1DIMUqkFAyphAla_q7Ec5-M-1p3_GlUHx/view?usp=sharing)
 
 [過去資料](https://sites.google.com/a/g.sp.m.is.nagoya-u.ac.jp/splocal-semi/b4-rinkou)
 
