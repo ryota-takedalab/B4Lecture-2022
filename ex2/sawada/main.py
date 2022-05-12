@@ -26,8 +26,8 @@ def _create_base_filter(cutoff_frequency, nperseg=512, sr=16000):
     t = np.arange(nperseg)
     
     # create filter
-    filter = regularized_cutoff_frequency / np.pi \
-        * np.sinc(regularized_cutoff_frequency * (t - nperseg // 2)) \
+    filter = 2 * regularized_cutoff_frequency \
+        * np.sinc(regularized_cutoff_frequency / np.pi * (t - nperseg // 2)) \
         * np.hamming(nperseg)
     return filter
 
