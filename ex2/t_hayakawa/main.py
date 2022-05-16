@@ -51,7 +51,6 @@ def Convolution(input, filter):
     for i in range(input.size):
         result[i:i+filter.size] += input[i]*filter
 
-    # -----------------------
     return result
 
 
@@ -73,7 +72,9 @@ def HPF(freq, sr, window):
     filter: ndarray
         high pass filter
     """
-
+    #not use sinc
+    #-----------------------------------------
+    """
     filter = np.zeros(sr)
     filter[freq:-freq] = 1
 
@@ -85,6 +86,25 @@ def HPF(freq, sr, window):
     # multiply window function
     center = filter.size//2
     filter = filter[center-window.size//2:center+window.size//2]*window
+    
+    n=np.arange(-(window.size//2),(window.size//2))
+    fig,ax=plt.subplots()
+    ax.plot(n,filter)
+    """
+    #-----------------------------------------
+
+    #use sinc
+    #-----------------------------------------
+    
+    n=np.arange(-(window.size//2),(window.size//2))
+    filter=-(freq/sr)*np.sinc((freq/sr)*n)
+    filter*=window
+
+    fig,ax=plt.subplots()
+    ax.plot(n,filter)
+    
+    #-----------------------------------------
+    
     return filter
 
 
@@ -160,6 +180,7 @@ def main():
     fig4.colorbar(img2, ax=ax4_2)
     fig4.savefig("Spectrogram.png")
 
+    plt.show()
     soundfile.write("FilterdSound.wav",data_hpf,samplerate=sr)
 
 
