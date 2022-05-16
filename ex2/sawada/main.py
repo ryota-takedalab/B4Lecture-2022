@@ -113,14 +113,14 @@ def stft(audio, fs, nperseg=512, noverlap=256):
 
     # stft
     steps = (len(audio) - noverlap) // (nperseg - noverlap)
-    Zxx = np.empty((0, nperseg))
+    Zxx = np.zeros((steps, nperseg), dtype=np.complex128)
     for i in range(steps):
         # apply window
         sample = window * audio[
             (nperseg - noverlap) * i: (nperseg - noverlap) * i + nperseg
         ]
         # fft
-        Zxx = np.append(Zxx, [np.fft.fft(sample)], axis=0)
+        Zxx[i] = np.fft.fft(sample)
 
     # create time axis
     t = np.linspace(0, len(audio) / fs, Zxx.shape[0])
