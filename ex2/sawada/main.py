@@ -7,129 +7,8 @@ import librosa
 import librosa.display
 import scipy.io.wavfile
 
-
-def _create_base_filter(cutoff_frequency, nperseg=512, sr=16000):
-    """filter creation base function
-    
-    This function returns the basic LPF for creating filter, wrapped and used.
-
-    Args:
-        cutoff_frequency (int): cutoff frequency
-        nperseg (int, optional): samples in stft segment. Defaults to 512.
-        sr (int, optional): sampling rate. Defaults to 16000.
-        
-    Returns:
-        ndarray: filter
-    """
-    
-    regularized_cutoff_frequency = 2 * np.pi * cutoff_frequency / sr
-    t = np.arange(nperseg)
-    
-    # create filter
-    filter = 2 * regularized_cutoff_frequency \
-        * np.sinc(regularized_cutoff_frequency / np.pi * (t - nperseg // 2)) \
-        * np.hamming(nperseg)
-    return filter
-
-
-def create_lpf(cutoff_frequency, fft_size=512, sr=16000):
-    """low-pass filter
-
-    Args:
-        cutoff_frequency (int): cutoff frequency
-        fft_size (int, optional): samples in stft segment. Defaults to 512.
-        sr (int, optional): sampling rate. Defaults to 16000.
-
-    Returns:
-        ndarray: low-pass filter
-    """
-    return _create_base_filter(cutoff_frequency, fft_size, sr)
-
-
-def create_hpf(cutoff_frequency, fft_size=512, sr=16000):
-    """high-pass filter
-
-    Args:
-        cutoff_frequency (int): cutoff frequency
-        fft_size (int, optional): samples in stft segment. Defaults to 512.
-        sr (int, optional): sampling rate. Defaults to 16000.
-
-    Returns:
-        ndarray: high-pass filter
-    """
-    return _create_base_filter(sr // 2, fft_size, sr) \
-        - _create_base_filter(cutoff_frequency, fft_size, sr)
-
-
-def apply_filter(audio, filter):
-    """apply filter to audio
-
-    Args:
-        audio (ndarray, axis=(time,)): audio array
-        filter (ndarray, axis=(time,)): filter
-
-    Returns:
-        ndarray: filtered audio
-    """
-    # define variables often used
-    filter_length = len(filter)
-    filter_fliped = filter[::-1]
-    
-    # initialize return value
-    result = np.zeros(len(audio) + filter_length - 1)
-    
-    audio_extended = np.concatenate([
-        np.zeros(filter_length - 1),
-        audio,
-        np.zeros(filter_length - 1)])
-
-    # convolve
-    for i in range(len(result)):
-        result[i] = np.sum(filter_fliped * audio_extended[i: i + filter_length])
-    return result
-
-
-def stft(audio, fs, nperseg=512, noverlap=256):
-    """Short-Time Fourier Transform
-
-    Args:
-        audio (array_like, axis=(time,)): input audio array
-        fs (float): sampling rate of input audio
-        nperseg (int, optional): samples in stft segment. Defaults to 512.
-        noverlap (int, optional): samples of stft overlap. Defaults to 256.
-
-    Returns:
-        ndarray: stft of audio. axis=(frequency, time,)
-        ndarray: time axis
-        ndarray: frequency axis
-    """
-
-    # zero padding at end of audio
-    padding_length = nperseg - len(audio) % (nperseg - noverlap)
-    audio = np.concatenate([audio, np.zeros(padding_length)])
-
-    # create window (hanning)
-    window = np.hanning(nperseg)
-
-    # stft
-    steps = (len(audio) - noverlap) // (nperseg - noverlap)
-    Zxx = np.zeros((steps, nperseg), dtype=np.complex128)
-    for i in range(steps):
-        # apply window
-        sample = window * audio[
-            (nperseg - noverlap) * i: (nperseg - noverlap) * i + nperseg
-        ]
-        # fft
-        Zxx[i] = np.fft.fft(sample)
-
-    # create time axis
-    t = np.linspace(0, len(audio) / fs, Zxx.shape[0])
-
-    # create frequency axis
-    f = np.linspace(0, fs, Zxx.shape[1])
-
-    return Zxx.T, t, f
-
+from my_functions import stft
+from my_functions import filter
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ex2 LPF')
@@ -155,7 +34,7 @@ if __name__ == "__main__":
     ax[0, 0].set_xlim([t[0], t[-1]])
     
     # stft
-    Zxx, t, f = stft(wav, sampling_rate)
+    Zxx, t, f = stft.stft(wav, sampling_rate)
 
     # plot stft
     ax[0, 1].set_title("spectrogram")
@@ -173,16 +52,16 @@ if __name__ == "__main__":
     
     if (args.mode == "LP"):
         # LPF
-        filter = create_lpf(440)
-        wav_filtered = apply_filter(wav, filter)
+        filter_ = filter.create_lpf(440)
+        wav_filtered = filter.apply_filter(wav, filter_)
 
     elif (args.mode == "HP"):
         # HPF
-        filter = create_hpf(880)
-        wav_filtered = apply_filter(wav, filter)
+        filter_ = filter.create_hpf(880)
+        wav_filtered = filter.apply_filter(wav, filter_)
 
     # stft
-    Zxx, t, f = stft(wav_filtered, sampling_rate)
+    Zxx, t, f = stft.stft(wav_filtered, sampling_rate)
 
     # plot stft
     ax[1, 1].set_title(f"{args.mode} filtered spectrogram")
@@ -200,25 +79,25 @@ if __name__ == "__main__":
     
     # filter preview
     ax[2, 1].set_title(f"{args.mode} filter preview")
-    ax[2, 1].plot(filter)
+    ax[2, 1].plot(filter_)
     ax[2, 1].set_xlabel("sample [n]")
     ax[2, 1].set_ylabel("magnification")
     
     # filter property
-    filter_property = np.fft.fft(filter)
+    filter_property = np.fft.fft(filter_)
     ax[1, 0].set_title(f"{args.mode} filter property (amplitude)")
     ax[1, 0].plot(
-        np.linspace(0, sampling_rate // 2, len(filter) // 2),
-        20 * np.log10(np.abs(filter_property[: len(filter) // 2])))
+        np.linspace(0, sampling_rate // 2, len(filter_) // 2),
+        20 * np.log10(np.abs(filter_property[: len(filter_) // 2])))
     ax[1, 0].set_xlim(0, sampling_rate // 2)
     ax[1, 0].set_xlabel("Frequency [Hz]")
     ax[1, 0].set_ylabel("Amplitude [dB]")
     
-    angle = np.angle(filter_property[: len(filter) // 2])
+    angle = np.angle(filter_property[: len(filter_) // 2])
     # np.place(angle, angle > -1 * 10 ** -3, -1 * np.pi)
     ax[2, 0].set_title(f"{args.mode} filter property (phase)")
     ax[2, 0].plot(
-        np.linspace(0, sampling_rate // 2, len(filter) // 2),
+        np.linspace(0, sampling_rate // 2, len(filter_) // 2),
         angle)
     ax[2, 0].set_xlim(0, sampling_rate // 2)
     ax[2, 0].set_xlabel("Frequency [Hz]")
