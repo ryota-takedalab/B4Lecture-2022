@@ -5,6 +5,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import soundfile as sf
 import matplotlib.ticker
 
+
 def STFT(signal,window,step):
     Z = []
     win_fc=np.hamming(window)
@@ -15,6 +16,7 @@ def STFT(signal,window,step):
         Z.append(tmp)
     Z= np.array(Z)
     return Z
+
 
 def ISTFT(y,frame_length,window,step):
     Z = np.zeros(frame_length)
@@ -74,7 +76,7 @@ def convolution(input,filter):
     return result
 
 
-def Spectrogram(ax,spec,frame_length):
+def spectrogram(ax,spec,frame_length,sr):
     spec_log = 20 * np.log10(np.abs(spec).T)[window // 2:] #dB
     im = ax.imshow(spec_log,cmap='jet',extent = [0,frame_length // sr,0,sr // 2,] ,aspect="auto")
     ax.set_yscale("log",base=2)
@@ -105,8 +107,8 @@ if __name__ == "__main__":
     #STFT
     original_spec = STFT(original_signal,window,step)
 
-    filter =HPF(500,sr=sr)
-    filter_p = np.fft.fft(filter)
+    filter =HPF(1000,sr=sr,fir_size = 512)
+    filter_property = np.fft.fft(filter)
     filtered_signal = convolution(original_signal,filter) #時間領域
     filtered_spec = STFT(filtered_signal,window,step) #周波数領域に変換
 
@@ -122,23 +124,32 @@ if __name__ == "__main__":
 
     #Original Spectrogram
     ax2 = fig.add_subplot(3,2,2)
-    Spectrogram(ax2,original_spec,frame_length)
+    spectrogram(ax2,original_spec,frame_length,sr)
 
     #Filter property
     ax3 = fig.add_subplot(3,2,3)
-    #ax0.plot(np.linspace(-sr//2, sr // 2, len(hpf)),20 * np.log10(np.abs(hpf_p)))
-    ax3.plot(np.linspace(0, sr // 2, len(filter) // 2),20 * np.log10(np.abs(filter_p[: len(filter) // 2])))
+    ax3.plot(np.linspace(0, sr // 2, len(filter) // 2),20 * np.log10(np.abs(filter_property[: len(filter) // 2])))
     ax3.set_xscale("log",base=2)
     ax3.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax3.set_xlabel("Frequency[Hz]")
     ax3.set_ylabel("Sound Amplitude")
-    ax3.set_title("Filter Property")
+    ax3.set_title("Filter Property (Amplitude)")
+
+    ax4 = fig.add_subplot(3,2,5)
+    angle = np.unwrap(np.angle(filter_property[: len(filter) // 2]))
+    #angle = np.angle(filter_property[: len(filter) // 2])
+    ax4.set_xscale("log",base=2)
+    ax4.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    ax4.plot(np.linspace(0, sr // 2, len(filter) // 2),angle)
+    ax4.set(title="Filter Phase",xlabel = "Frequency [Hz]",ylabel = "Angle[rad]")
 
     #Filtered Signal Spectrogram
-    ax4 = fig.add_subplot(3,2,4)
-    Spectrogram(ax4,filtered_spec,frame_length)
+    ax6 = fig.add_subplot(3,2,4)
+    spectrogram(ax6,filtered_spec,frame_length,sr)
 
-        #ISTFT
+    #ISTFT
+    print(original_spec.shape)
+    print(filtered_spec.shape)
     ispec = ISTFT(filtered_spec,frame_length,window,step)
     sf.write("resynthesized.wav", ispec, sr, subtype="PCM_16")
 
