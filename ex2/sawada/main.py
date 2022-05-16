@@ -65,8 +65,8 @@ def apply_filter(audio, filter):
     """apply filter to audio
 
     Args:
-        audio (ndarray): audio array
-        filter (ndarray): filter
+        audio (ndarray, axis=(time,)): audio array
+        filter (ndarray, axis=(time,)): filter
 
     Returns:
         ndarray: filtered audio
@@ -93,13 +93,13 @@ def stft(audio, fs, nperseg=512, noverlap=256):
     """Short-Time Fourier Transform
 
     Args:
-        audio (array_like): input audio array
+        audio (array_like, axis=(time,)): input audio array
         fs (float): sampling rate of input audio
         nperseg (int, optional): samples in stft segment. Defaults to 512.
         noverlap (int, optional): samples of stft overlap. Defaults to 256.
 
     Returns:
-        ndarray: stft of audio
+        ndarray: stft of audio. axis=(frequency, time,)
         ndarray: time axis
         ndarray: frequency axis
     """
