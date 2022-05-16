@@ -57,7 +57,7 @@ def create_hpf(cutoff_frequency, fft_size=512, sr=16000):
     Returns:
         ndarray: high-pass filter
     """
-    return _create_base_filter(sr / (2 * np.pi)) \
+    return _create_base_filter(sr // 2, fft_size, sr) \
         - _create_base_filter(cutoff_frequency, fft_size, sr)
 
 
@@ -134,6 +134,7 @@ def stft(audio, fs, nperseg=512, noverlap=256):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ex2 LPF')
     parser.add_argument("-i", "--input", help="input file")
+    parser.add_argument('--mode', choices=['LP', 'HP'], default='LP')
     args = parser.parse_args()
 
     # read audio file
@@ -170,15 +171,21 @@ if __name__ == "__main__":
     cax = divider.append_axes("bottom", size="5%", pad=0.5)
     plt.colorbar(im, cax=cax, orientation="horizontal")
     
-    # LPF
-    low_pass_filter = create_lpf(440)
-    wav_lpf = apply_filter(wav, low_pass_filter)
+    if (args.mode == "LP"):
+        # LPF
+        filter = create_lpf(440)
+        wav_filtered = apply_filter(wav, filter)
+
+    elif (args.mode == "HP"):
+        # HPF
+        filter = create_hpf(880)
+        wav_filtered = apply_filter(wav, filter)
 
     # stft
-    Zxx, t, f = stft(wav_lpf, sampling_rate)
+    Zxx, t, f = stft(wav_filtered, sampling_rate)
 
     # plot stft
-    ax[1, 1].set_title("low-pass spectrogram")
+    ax[1, 1].set_title(f"{args.mode} filtered spectrogram")
     im = ax[1, 1].imshow(
         20 * np.log10(np.abs(np.flipud(Zxx[:Zxx.shape[0] // 2]))),
         cmap=plt.cm.jet,
@@ -190,51 +197,28 @@ if __name__ == "__main__":
     divider = make_axes_locatable(ax[1, 1])
     cax = divider.append_axes("bottom", size="5%", pad=0.5)
     plt.colorbar(im, cax=cax, orientation="horizontal")
-
-    """
-    # HPF
-    high_pass_filter = create_hpf(440)
-    wav_hpf = apply_filter(wav, high_pass_filter)
-
-    # stft
-    Zxx, t, f = stft(wav_hpf, sampling_rate)
-
-    # plot stft
-    ax[2, 1].set_title("high-pass spectrogram")
-    im = ax[2, 1].imshow(
-        20 * np.log10(np.abs(np.flipud(Zxx[:Zxx.shape[0] // 2]))),
-        cmap=plt.cm.jet,
-        aspect="auto",
-        extent=[t[0], t[-1], f[0], f[len(f) // 2]])
-    ax[2, 1].set_xlabel("Time [s]")
-    ax[2, 1].set_ylabel("Frequency [Hz]")
-    # colorbar: https://sabopy.com/py/matplotlib-18/
-    divider = make_axes_locatable(ax[2, 1])
-    cax = divider.append_axes("bottom", size="5%", pad=0.5)
-    plt.colorbar(im, cax=cax, orientation="horizontal")
-    """
     
     # filter preview
-    ax[2, 1].set_title("filter preview")
-    ax[2, 1].plot(low_pass_filter)
+    ax[2, 1].set_title(f"{args.mode} filter preview")
+    ax[2, 1].plot(filter)
     ax[2, 1].set_xlabel("sample [n]")
     ax[2, 1].set_ylabel("magnification")
     
     # filter property
-    filter_property = np.fft.fft(low_pass_filter)
-    ax[1, 0].set_title("low-pass filter property (amplitude)")
+    filter_property = np.fft.fft(filter)
+    ax[1, 0].set_title(f"{args.mode} filter property (amplitude)")
     ax[1, 0].plot(
-        np.linspace(0, sampling_rate // 2, len(low_pass_filter) // 2),
-        20 * np.log10(np.abs(filter_property[: len(low_pass_filter) // 2])))
+        np.linspace(0, sampling_rate // 2, len(filter) // 2),
+        20 * np.log10(np.abs(filter_property[: len(filter) // 2])))
     ax[1, 0].set_xlim(0, sampling_rate // 2)
     ax[1, 0].set_xlabel("Frequency [Hz]")
     ax[1, 0].set_ylabel("Amplitude [dB]")
     
-    angle = np.angle(filter_property[: len(low_pass_filter) // 2])
+    angle = np.angle(filter_property[: len(filter) // 2])
     # np.place(angle, angle > -1 * 10 ** -3, -1 * np.pi)
-    ax[2, 0].set_title("low-pass filter property (phase)")
+    ax[2, 0].set_title(f"{args.mode} filter property (phase)")
     ax[2, 0].plot(
-        np.linspace(0, sampling_rate // 2, len(low_pass_filter) // 2),
+        np.linspace(0, sampling_rate // 2, len(filter) // 2),
         angle)
     ax[2, 0].set_xlim(0, sampling_rate // 2)
     ax[2, 0].set_xlabel("Frequency [Hz]")
@@ -244,6 +228,6 @@ if __name__ == "__main__":
     plt.show()
     
     # export istft result as wav
-    scipy.io.wavfile.write("low-pass.wav",
+    scipy.io.wavfile.write(f"{args.mode}.wav",
                            sampling_rate,
-                           wav_lpf.astype(np.float32))
+                           wav_filtered.astype(np.float32))
