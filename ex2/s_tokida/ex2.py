@@ -1,9 +1,10 @@
+import argparse
 import numpy as np
 import soundfile as sf
 from matplotlib import pyplot as plt
 from math import pi
 
-def STFT(data, Fs, Fl, overlap): 
+def stft(data, Fs, Fl, overlap): 
 
     shift = int((Fl-overlap)//(Fs-overlap))  # number of shifts
     win = np.hamming(Fs)  # humming window fuction
@@ -32,7 +33,7 @@ def sinc(x):
     else:
         return np.sin(x)/x
 
-def BEF(f_low, f_high, samplerate, f_size):
+def befilter(f_low, f_high, samplerate, f_size):
     if f_size % 2 != 0:
         f_size += 1
     
@@ -50,7 +51,7 @@ def BEF(f_low, f_high, samplerate, f_size):
     return fir * window
 
 def myspectrogram(data, Fs, Fl, overlap, samplerate, title_name):
-    spec = STFT(data, Fs, Fl, overlap)
+    spec = stft(data, Fs, Fl, overlap)
 
     spec_log = 20*np.log10(np.abs(spec))
     fig = plt.figure()
@@ -66,18 +67,27 @@ def myspectrogram(data, Fs, Fl, overlap, samplerate, title_name):
     plt.close()
 
 def main():
-    # load file
-    filepath = 'ex1.wav'
-    data, samplerate = sf.read(filepath)  # samplerate: 48000
-    # culculate
-    Fs = 1024  # Frame size
-    Fl = data.shape[0]  # Frame length  # len(data) = 301644
-    overlap = Fs * 0.5
-    f_low = 3000
-    f_high = 8000
-    f_size = 100
+    parser = argparse.ArgumentParser()
 
-    bef = BEF(f_low, f_high, samplerate, f_size)
+    # parser.add_argumentで受け取る引数を追加
+    parser.add_argument('filepath', type=str, help='wav file name')
+    parser.add_argument('--f_low', type=int, default=3000, help='low frequency')
+    parser.add_argument('--f_high', type=int, default=8000, help='high frequency')
+    parser.add_argument('--f_size', type=int, default=100, help='window size')
+    parser.add_argument('--Fs', type=int, default=1024, help='Frame size')
+    parser.add_argument('--overlap', type=float, default=0.5, help='overlap rate')
+
+    args = parser.parse_args()
+
+    # load file
+    data, samplerate = sf.read(args.filepath)  # samplerate: 48000
+
+    # culculate
+    Fs = args.Fs  # Frame size
+    Fl = data.shape[0]  # Frame length  # len(data) = 301644
+    overlap = Fs * args.overlap
+
+    bef = befilter(args.f_low, args.f_high, samplerate, args.f_size)
     # frequency and phase characteristic of BEF filter
     freq_char = np.abs(np.fft.fft(bef))[:len(bef)//2+1]
     phase_char = np.unwrap(np.angle(np.fft.fft(bef))[:len(bef)//2+1]) * 180 / pi
@@ -100,6 +110,7 @@ def main():
     plt.xlabel('Frequency[Hz]')
     plt.ylabel('Phase[rad]')
     plt.title('BEF Phase')
+
     plt.tight_layout()
     plt.savefig('filter_characteristic.png')
     plt.show()
@@ -125,7 +136,7 @@ def main():
     plt.show()
     plt.close()
     
-    #spectrogram by ex_1
+    # spectrogram by ex_1
     myspectrogram(data, Fs, Fl, overlap, samplerate, 'Original Spectrogram')
     myspectrogram(data_h, Fs, Fl, overlap, samplerate, 'Filtered Spectrogram')
 
