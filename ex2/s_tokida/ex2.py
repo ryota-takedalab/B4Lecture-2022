@@ -42,7 +42,7 @@ def befilter(f_low, f_high, samplerate, f_size):
 
     fir = []
     for n in range(-f_size // 2, f_size // 2 + 1):
-        BEF_impulse = sinc(pi * n) - (w_high * sinc(w_high * n) + w_low * sinc(w_low * n)) / pi
+        BEF_impulse = sinc(pi * n) + (- w_high * sinc(w_high * n) + w_low * sinc(w_low * n)) / pi
         fir.append(BEF_impulse)
 
     fir = np.array(fir)
@@ -56,7 +56,8 @@ def myspectrogram(data, Fs, Fl, overlap, samplerate, title_name):
     spec_log = 20*np.log10(np.abs(spec))
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
-    im = ax1.imshow(spec_log[:, :Fs//2].T, extent=[0, float(Fl)/samplerate, 0, samplerate/2], aspect='auto', origin = 'lower', cmap = 'hsv')
+    im = ax1.imshow(spec_log[:, :Fs//2].T, extent=[0, float(Fl)/samplerate, 0, samplerate/2],
+                    aspect='auto', origin = 'lower', cmap = 'hsv')
     fig.colorbar(im)
     ax1.set_xlabel('Time[s]')
     ax1.set_ylabel('Frequency[Hz]')
@@ -88,6 +89,15 @@ def main():
     overlap = Fs * args.overlap
 
     bef = befilter(args.f_low, args.f_high, samplerate, args.f_size)
+    # plt.figure()
+    # plt.plot(bef)
+    # plt.title("Band Eliminate Filter impulse respose")
+    # plt.xlabel("Time")
+    # plt.ylabel("Amplitude")
+    # plt.savefig("BEF_impulse.png")
+    # plt.show()
+    # plt.close()
+
     # frequency and phase characteristic of BEF filter
     freq_char = np.abs(np.fft.fft(bef))[:len(bef)//2+1]
     phase_char = np.unwrap(np.angle(np.fft.fft(bef))[:len(bef)//2+1]) * 180 / pi
@@ -135,10 +145,10 @@ def main():
     plt.savefig('wav_plot.png')
     plt.show()
     plt.close()
-    
+
     # spectrogram by ex_1
-    myspectrogram(data, Fs, Fl, overlap, samplerate, 'Original Spectrogram')
-    myspectrogram(data_h, Fs, Fl, overlap, samplerate, 'Filtered Spectrogram')
+    myspectrogram(data, Fs, Fl, overlap, samplerate, 'OriginalSpectrogram')
+    myspectrogram(data_h, Fs, Fl, overlap, samplerate, 'FilteredSpectrogram')
 
     sf.write(file='ex2_filtered.wav', data=data_h, samplerate=samplerate)  # wavFile by ISTFT
 
