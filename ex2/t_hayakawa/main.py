@@ -1,3 +1,4 @@
+from tracemalloc import start
 import numpy as np
 from scipy import signal
 import librosa
@@ -5,18 +6,18 @@ import librosa.display
 from matplotlib import pyplot as plt
 import argparse
 import soundfile
-
+import time
 
 def STFT(data, window=1024, step=512):
-    """
-    Short Time Fourier Transform
+    """Short Time Fourier Transform
 
-    Parameters
-    ----------
-    data : Input Signal (np.aray)
-    window : Length of window size
-        width of cut signal
-    step : Length of step size
+    Args:
+        data (ndarray): input signal
+        window (int, optional): Length of window. Defaults to 1024.
+        step (int, optional): Length of shift. Defaults to 512.
+
+    Returns:
+        ndarray: spectrogram
     """
     # window function
     win_fc = np.hamming(window)
@@ -34,47 +35,45 @@ def STFT(data, window=1024, step=512):
 
     return spec
 
-def Convolution(input, filter):
-    """
-    Parameters
-    ----------
-    input: ndarray
-    filter: ndarray
 
-    Return
-    ----------
-    result: ndarray
+
+def Convolution(input, filter):
+    """Concolution signal
+
+    Args:
+        input (ndarray): input signal
+        filter (ndarray): filter
+
+    Returns:
+        ndarray: size = input.size+filter.size-1
     """
 
     result = np.zeros(input.size+filter.size-1)
 
     for i in range(input.size):
         result[i:i+filter.size] += input[i]*filter
-
+    
     return result
 
 
 def HPF(freq, sr, window):
-    """
-    High Pass Filter
+    """High Pass Filter
 
-    Parameters
-    ----------
-    freq: int
-        threshold
-    sr: int
-        sampling rate
-    window: ndarray
-        window function
+    Args:
+        freq (int): threshold
+        sr (int): sampling rate
+        window (ndarray): window function
 
-    Return
-    ----------
-    filter: ndarray
-        high pass filter
+    Returns:
+        ndarray: high pass filter
     """
+
     #not use sinc
+    #Calculation time: 1.26e-3
     #-----------------------------------------
-    """
+    
+    """ #startTime=time.time()
+
     filter = np.zeros(sr)
     filter[freq:-freq] = 1
 
@@ -87,24 +86,25 @@ def HPF(freq, sr, window):
     center = filter.size//2
     filter = filter[center-window.size//2:center+window.size//2]*window
     
-    n=np.arange(-(window.size//2),(window.size//2))
-    fig,ax=plt.subplots()
-    ax.plot(n,filter)
-    """
+
+    #elapsedTime=time.time()-startTime
+    #print("not sinc:{0}".format(elapsedTime)) """
     #-----------------------------------------
 
     #use sinc
+    #Calculation time: 4.25e-5
     #-----------------------------------------
-    
+    #startTime=time.time()
+
     n=np.arange(-(window.size//2),(window.size//2))
-    filter=-(freq/sr)*np.sinc((freq/sr)*n)
+    filter=-2*(freq/sr)*np.sinc(2*(freq/sr)*n)+np.sinc(n)
     filter*=window
 
-    fig,ax=plt.subplots()
-    ax.plot(n,filter)
+    #elapsedTime=time.time()-startTime
+    #print("sinc:{0}".format(elapsedTime))
     
     #-----------------------------------------
-    
+
     return filter
 
 
@@ -180,7 +180,6 @@ def main():
     fig4.colorbar(img2, ax=ax4_2)
     fig4.savefig("Spectrogram.png")
 
-    plt.show()
     soundfile.write("FilterdSound.wav",data_hpf,samplerate=sr)
 
 
