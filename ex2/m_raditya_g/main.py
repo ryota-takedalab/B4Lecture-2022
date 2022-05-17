@@ -96,7 +96,7 @@ def main():
     ax1[1].set_ylabel("Phase [deg]")
     ax1[1].set_xlabel("Frequency [Hz]")
     ax1[1].grid()
-    fig1.savefig("ex2_filter_characteristic.png")
+    fig1.savefig(f"ex2_filter_characteristic_{args.frequency_cut1}_{args.frequency_cut2}.png")
 
     # Prepare the plots figures
     fig, (ax1, ax2) = plt.subplots(nrows=2, figsize=(20, 10))
@@ -118,7 +118,7 @@ def main():
     ax1.set_title('Filtered Spectrogram')
     fig.colorbar(im, ax=ax1)
     plt.show()
-    fig.savefig('ex2_spectrogram_comparison.png')
+    fig.savefig(f'ex2_spectrogram_comparison_{args.frequency_cut1}_{args.frequency_cut2}.png')
     plt.close()
 
     # Prepare the plots figures
@@ -144,11 +144,11 @@ def main():
     ax2[2].set_ylabel('Amplitude [unknown]')
     ax2[2].set_title('Input Audio Frequency-time Graph (Filtered)')
     plt.show()
-    fig2.savefig('ex2_Amplitude_time_comparison.png')
+    fig2.savefig(f'ex2_Amplitude_time_comparison_{args.frequency_cut1}_{args.frequency_cut2}.png')
     plt.close()
 
     # Save a new synthesized audio
-    sf.write('ex2_synthesized.wav', filtered_data, samplerate)
+    sf.write(f'ex2_synthesized_{args.frequency_cut1}_{args.frequency_cut2}.wav', filtered_data, samplerate)
 
 
 if __name__ == '__main__':
