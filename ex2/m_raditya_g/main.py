@@ -74,7 +74,7 @@ def main():
     filtered_data = conv(audio, bpf)
 
     # BPF Filter amplitude and phase
-    bpf_fft = abs(np.fft.fft(bpf))
+    bpf_fft = np.fft.fft(bpf)
     amp = 20*np.log10(bpf_fft)
     phase = np.unwrap(np.angle(bpf_fft)) * 180/np.pi
     frequency_lab = np.arange(0, samplerate/2, (samplerate//2)/(n//2+1))
