@@ -20,12 +20,12 @@ def stft(data, Fs, Fl, overlap):
             pos += (Fs-overlap)
 
     return spec
-    
+
 def myconvolve(x, h):
-    out = np.zeros(len(x) + len(h))
-    for n in range(len(h)):
-        out[n: n+len(x)] += x * h[n]
-    return out[:len(x)]
+    y = np.zeros(len(x) + len(h))
+    for i in range(len(x)):
+        y[i: i+len(h)] += x[i] * h
+    return y[:len(x)]
 
 def sinc(x):
     if x == 0:
