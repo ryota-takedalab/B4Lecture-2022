@@ -32,7 +32,7 @@ def regression_2d(data, title, dim=1,
     fig, ax = plt.subplots(figsize=(12, 10))
     fig.subplots_adjust(hspace=0.6)
 
-    ax.set_title(title)
+    ax.set_title(title, fontsize=24)
     ax.set_xlabel("x1")
     ax.set_ylabel("y")
     ax.scatter(data[:, 0], data[:, 1], color="blue",
@@ -47,7 +47,7 @@ def regression_2d(data, title, dim=1,
         label += " + " + "{:.3g}".format(coefficient[i + 1]) \
             + f"$x^{i+1}$"
     ax.plot(x_plot[:, 0], y_reg, color="red", label=label)
-    ax.legend()
+    ax.legend(fontsize=20)
     plt.savefig(f"{title}_{dim}th_polynomial.png")
     plt.show()
         
@@ -107,7 +107,7 @@ def regression_3d(data, title, dim=1,
                 + f"$x_1^{i + 1 - j}x_2^{j}$"
             col += 1
     ax.plot_wireframe(x1, x2, y_reg, color="red", label=label)
-    ax.legend()
+    ax.legend(fontsize=18)
     plt.savefig(f"{title}_{dim}th_polynomial.png")
     plt.show()
 
