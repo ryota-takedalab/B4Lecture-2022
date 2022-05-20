@@ -8,6 +8,15 @@ from mpl_toolkits.mplot3d import Axes3D
 
 def regression_2d(data, title, dim=1,
                   regularize=False, reg_coef=1.0):
+    """regression for 2d data
+
+    Args:
+        data (ndarray, axis=(data_column, 2)): observed data
+        title (str): graph title
+        dim (int, optional): polynominal degree. Defaults to 1.
+        regularize (bool, optional): enable L2 regularize. Defaults to False.
+        reg_coef (float, optional): regularize coefficient. Defaults to 1.0.
+    """
     data_regression = np.zeros((data.shape[0], dim + 1))
     density = 50
     x_linspace = np.linspace(np.min(data[:, 0]), np.max(data[:, 0]), density)
@@ -45,6 +54,15 @@ def regression_2d(data, title, dim=1,
         
 def regression_3d(data, title, dim=1,
                   regularize=False, reg_coef=1.0):
+    """regression for 3d data
+
+    Args:
+        data (ndarray, axis=(data_column, 3)): observed data
+        title (str): graph title
+        dim (int, optional): polynominal degree. Defaults to 1.
+        regularize (bool, optional): enable L2 regularize. Defaults to False.
+        reg_coef (float, optional): regularize coefficient. Defaults to 1.0.
+    """
     density = 50
     data_regression = np.zeros(
         (data.shape[0], ((dim + 1) * (dim + 2)) // 2))
