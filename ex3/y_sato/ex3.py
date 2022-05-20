@@ -115,7 +115,7 @@ def regression3d(data, title, deg):
     ax.scatter3D(x[:, 0], x[:, 1], y, c="r", label="Observed data")
     X, Y = np.meshgrid(np.arange(x[:, 0].min(), x[:, 0].max(), 0.1), np.arange(x[:, 1].min(), x[:, 1].max(), 0.1))
     Z = model.predict3d(X, Y)
-    ax.plot_wireframe(X, Y, Z, label=model.label(), alpha = 0.5)
+    ax.plot_wireframe(X, Y, Z, label=model.label(), alpha=0.5)
     ax.set_xlabel("$x_1$")
     ax.set_ylabel("$x_2$")
     ax.set_zlabel("$x_3$")
