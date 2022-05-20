@@ -68,7 +68,8 @@ def regression_3d(data, title, dim=1,
     coefficient = linear_regression(data_regression, regularize, reg_coef)
     # plot initialization
     fig, ax = plt.subplots(figsize=(12, 10), subplot_kw=dict(projection='3d'))
-    ax = Axes3D(fig)
+    ax = Axes3D(fig, auto_add_to_figure=False)
+    fig.add_axes(ax)
     fig.subplots_adjust(hspace=0.6)
 
     ax.set_title(title)
