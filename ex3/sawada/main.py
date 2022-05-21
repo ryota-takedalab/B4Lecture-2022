@@ -7,15 +7,14 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 def regression_2d(data, title, dim=1,
-                  regularize=False, reg_coef=1.0):
+                  reg_coef=0.0):
     """regression for 2d data
 
     Args:
         data (ndarray, axis=(data_column, 2)): observed data
         title (str): graph title
         dim (int, optional): polynominal degree. Defaults to 1.
-        regularize (bool, optional): enable L2 regularize. Defaults to False.
-        reg_coef (float, optional): regularize coefficient. Defaults to 1.0.
+        reg_coef (float, optional): regularize coefficient. Defaults to 0.0.
     """
     data_regression = np.zeros((data.shape[0], dim + 1))
     density = 50
@@ -27,7 +26,7 @@ def regression_2d(data, title, dim=1,
         x_plot[:, i] = np.power(x_linspace, i + 1)
     data_regression[:, dim] = data[:, 1]
 
-    coefficient = linear_regression(data_regression, regularize, reg_coef)
+    coefficient = linear_regression(data_regression, reg_coef)
     # plot initialization
     fig, ax = plt.subplots(figsize=(12, 10))
     fig.subplots_adjust(hspace=0.6)
@@ -53,15 +52,14 @@ def regression_2d(data, title, dim=1,
         
         
 def regression_3d(data, title, dim=1,
-                  regularize=False, reg_coef=1.0):
+                  reg_coef=0.0):
     """regression for 3d data
 
     Args:
         data (ndarray, axis=(data_column, 3)): observed data
         title (str): graph title
         dim (int, optional): polynominal degree. Defaults to 1.
-        regularize (bool, optional): enable L2 regularize. Defaults to False.
-        reg_coef (float, optional): regularize coefficient. Defaults to 1.0.
+        reg_coef (float, optional): regularize coefficient. Defaults to 0.0.
     """
     density = 50
     data_regression = np.zeros(
@@ -83,7 +81,7 @@ def regression_3d(data, title, dim=1,
             col += 1
     data_regression[:, -1] = data[:, -1]
 
-    coefficient = linear_regression(data_regression, regularize, reg_coef)
+    coefficient = linear_regression(data_regression, reg_coef)
     # plot initialization
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
@@ -111,13 +109,12 @@ def regression_3d(data, title, dim=1,
     plt.show()
 
 
-def linear_regression(data, regularize=False, reg_coef=1.0):
+def linear_regression(data, reg_coef=0.0):
     """linear regression
 
     Args:
         data (ndarray, size=(data_column, variables)): observation data.
-        regularize (bool, optional): enable L2 regularize. Defaults to False.
-        reg_coef (float, optional): regularize coefficient. Defaults to 1.0.
+        reg_coef (float, optional): regularize coefficient. Defaults to 0.0.
 
     Returns:
         ndarray: regression coefficient (intercept, slope, slope,...)
@@ -125,16 +122,11 @@ def linear_regression(data, regularize=False, reg_coef=1.0):
     data_length = data.shape[0]
     data_dim = data.shape[1]
 
-    # set regularize coefficient
-    reg = 0
-    if regularize:
-        reg = reg_coef
-
     # add constant term
     x = np.concatenate([np.ones((data_length, 1)), data[:, :-1]], 1)
 
     parameters = \
-        np.linalg.inv(x.T @ x - reg * np.identity(data_dim)) \
+        np.linalg.inv(x.T @ x - reg_coef * np.identity(data_dim)) \
         @ x.T \
         @ data[:, -1]
 
@@ -145,7 +137,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ex3')
     parser.add_argument("-i", "--input", help="input file id", type=int)
     parser.add_argument("-d", '--dimension', type=int)
-    parser.add_argument("-r", "--regularize", action="store_true")
+    parser.add_argument("-r", "--regularize", type=float)
     args = parser.parse_args()
 
     # read data
@@ -153,7 +145,7 @@ if __name__ == "__main__":
 
     if (data.shape[1] == 2):
         regression_2d(data, f"data{args.input}", dim=args.dimension,
-                      regularize=args.regularize)
+                      reg_coef=args.regularize)
     if (data.shape[1] == 3):
         regression_3d(data, f"data{args.input}", dim=args.dimension,
-                      regularize=args.regularize)
+                      reg_coef=args.regularize)
