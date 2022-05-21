@@ -85,9 +85,8 @@ def regression_3d(data, title, dim=1,
 
     coefficient = linear_regression(data_regression, regularize, reg_coef)
     # plot initialization
-    fig, ax = plt.subplots(figsize=(12, 10), subplot_kw=dict(projection='3d'))
-    ax = Axes3D(fig, auto_add_to_figure=False)
-    fig.add_axes(ax)
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection='3d')
     fig.subplots_adjust(hspace=0.6)
 
     ax.set_title(title)
@@ -107,7 +106,7 @@ def regression_3d(data, title, dim=1,
                 + f"$x_1^{i + 1 - j}x_2^{j}$"
             col += 1
     ax.plot_wireframe(x1, x2, y_reg, color="red", label=label)
-    ax.legend(fontsize=18)
+    ax.legend(fontsize=14)
     plt.savefig(f"{title}_{dim}th_polynomial.png")
     plt.show()
 
