@@ -5,28 +5,24 @@ import librosa
 import librosa.display
 import os
 import soundfile as sf
-import warnings
+#import warnings
 
-warnings.filterwarnings("ignore")
+#warnings.filterwarnings("ignore")
 
 def stft(wav, hop, win_length):
     hop_length = int(win_length * hop)
     window = np.hamming(win_length)
-    
-    # padding zero
-    padding_length = win_length - len(wav) % (hop_length)
-    wav = np.concatenate([wav, np.zeros(padding_length)])
-    
-    # スペクトログラムの配列生成
-    spec = np.empty((len(wav) // hop_length -1, win_length))
-    
-    # stft
-    for i in range(0, spec.shape[0] - 1):
-        x = wav[i * hop_length : i * hop_length + win_length]
-        x = window * x 
-        spec[i] = np.fft.fft(x)
-        #print("spec.shape:", spec.shape)
-    spec = np.array(spec).T    
+    spec = []
+    for j in range(0, len(wav), hop_length):
+        x = wav[j:j + win_length]
+        #print("len(x):", len(x))
+        if win_length > len(x):
+            break
+        x = window * x
+        x = np.fft.fft(x)
+        #print("fft(x).shape:", x.shape)
+        spec.append(x)
+    spec = np.array(spec).T
     return spec
 
 #inverse stft
@@ -37,7 +33,7 @@ def istft(spec, hop, win_length):
 
     Parameters
     ----------
-    spec: ndarray
+    data: ndarray
         complex-valued spectrogram
     win_length: int
         window length
@@ -46,27 +42,29 @@ def istft(spec, hop, win_length):
 
     Returns
     -------
-    inv_wav: ndarray
+    wave_data: ndarray
         waveform data
     '''
     hop_length = int(win_length * hop)
-    inv_wav = np.empty(hop_length * (spec.shape[0] + 1))
+    ite = spec.shape[0]
+    print("spec.shape[0]:", spec.shape[0])
+    print("win_length:", win_length)
+    window = np.hamming(win_length)
 
-    # istft
-    for i in range(0, spec.shape[0] - 1):
-        inv_wav[
-            i * hop_length : i * hop_length + win_length
-        ] = np.fft.ifft(spec[i]).real
-
-    return inv_wav
+    wave_data = np.zeros(ite * hop_length + win_length)
+    for i in range(ite):
+        x = spec[i]
+        x = np.fft.ifft(x) * win_length
+        wave_data[i * hop_length * hop_length + win_length] = wave_data[i * hop_length:i * hop_length + win_length] + x
+    
+    return wave_data
 
 def main():
     dir = os.path.dirname(__file__) + "/"
-    filename = dir + "original_wave.wav"
+    filename = dir + "voice_recording.wav"
 
     wav, sr = librosa.load(filename, mono = True)
 
-    # グラフ設定
     fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
     plt.subplots_adjust(hspace=0.7)
 
@@ -74,10 +72,9 @@ def main():
     ax[0].set(title = "Original signal", xlabel = None, ylabel = "Amplitude")
 
     hop = 0.5
-    win_length = 64
+    win_length = 1024
     hop_length = int(win_length * hop)
 
-    # stft
     spec = stft(wav, hop = hop, win_length = win_length)
     db = librosa.amplitude_to_db(np.abs(spec))
     img = librosa.display.specshow(
@@ -94,21 +91,20 @@ def main():
     fig.colorbar(img, aspect = 10, pad = 0.05, extend = "both", ax = ax[1], format = "%+2.f dB")
 
     #inverse-stft
-    inv_wav = istft(np.array(spec).T, hop = hop, win_length = win_length)
+    inv_wav = istft(spec, hop = hop, win_length = win_length)
     librosa.display.waveshow(inv_wav, sr = sr, color = "g", ax = ax[2])
-    ax[2].set(title = "Re-synthesized signal", xlabel = "Time [s]", ylabel = "Amplitude")
-    sf.write(dir + "\\result\\inverse_wave.wav", inv_wav, sr)
+    ax[2].set(title = "Re-synthesized signal", xlabel = "Time [s]", ylabel = "Magnitude")
 
     #graph adjustment
     ax_pos_0 = ax[0].get_position()
     ax_pos_1 = ax[1].get_position()
     ax_pos_2 = ax[2].get_position()
-    ax[0].set_position([ax_pos_0.x0, ax_pos_0.y0, ax_pos_1.width, ax_pos_1.height])
+    ax[0].set_position([ax_pos_0.x0, ax_pos_0,y0, ax_pos_1.width, ax_pos_1.height])
     ax[2].set_position([ax_pos_2.x0, ax_pos_2.y0, ax_pos_1.width, ax_pos_1.height])
     fig.align_labels()
 
     #save and show figure of result
-    plt.savefig(dir + "\\result\\ex1_result.png")
+    plt.savefig(dir + "ex1_result.png")
     plt.show()
 
 if __name__ == "__main__":
