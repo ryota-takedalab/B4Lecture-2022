@@ -30,7 +30,7 @@ def least_squares(x1,x2,dim):
 
     return(predict_y, w)
 
-def least_squares_3(x1, x2, x3, dim):
+def least_squares_3(x1, x2, x3, dim, lamda):
     # phiの作成
     n = len(x1)  # 100
     phi = np.zeros([n, 1 + dim*2])
@@ -39,7 +39,8 @@ def least_squares_3(x1, x2, x3, dim):
 
     # Iの作成
     I = np.eye(1 + dim*2)
-    w = np.dot(np.dot(np.linalg.pinv(np.dot(phi.T,phi)), phi.T), x3)
+    # w = np.dot(np.dot(np.linalg.pinv(np.dot(phi.T,phi)), phi.T), x3)  # 正則化なし
+    w = np.dot(np.dot(np.linalg.pinv(np.dot(phi.T,phi)+lamda*I), phi.T), x3)  # 正則化あり
    
     # z座標の計算
     def predict_z(x, y):
@@ -57,10 +58,12 @@ def main():
 
     parser.add_argument('filepath', type=str, help='csv file name')
     parser.add_argument('--dim', type=int, default=1, help='x1 & x2 dimention number')
+    parser.add_argument('--lamda', type=float, default=0, help='lamda')
     args = parser.parse_args()
     filepath = args.filepath
     dim = args.dim
     name = filepath.split('.')[0]
+    lamda = args.lamda
 
     with open(filepath, encoding='utf8', newline='') as f:
         df = pd.read_csv(filepath).values
@@ -106,7 +109,7 @@ def main():
             x2 = df[:, 1:2]
             print('data.shape[1] = 3')
 
-            predict_z, w = least_squares_3(x1, x2, x3, dim)
+            predict_z, w = least_squares_3(x1, x2, x3, dim, lamda)
 
             x = np.linspace(min(x1), max(x1), len(x1))
             y = np.linspace(min(x2), max(x2), len(x2))
