@@ -45,7 +45,7 @@ def least_squares_3(x1, x2, x3, dim, lamda):
     # z座標の計算
     def predict_z(x, y):
         z = 0
-        for i in range(dim+1): #<-x^0,x^1,x^2,y^1,y^2の係数
+        for i in range(dim+1):  # <-x^0,x^1,x^2,y^1,y^2の係数
             z += w[i]*(x**i)
         for j in range(1, dim+1):
             z += w[j+dim]*(y**j)
@@ -73,7 +73,7 @@ def main():
         if df.shape[1] == 2:
             print('df.shape[1] = 2')
 
-            #多項式曲線フィッティング
+            # 多項式曲線フィッティング
             predict_y, w = least_squares(x1, x2, dim)
 
             df_w = pd.DataFrame()
@@ -102,7 +102,6 @@ def main():
             plt.show()
             plt.close()
 
-
         elif df.shape[1] == 3:
             x3 = x2
             x1 = df[:, :1]
@@ -116,24 +115,24 @@ def main():
             _x, _y = np.meshgrid(x, y)
             _z = predict_z(x, y)
 
-            #plot            
-            fig = plt.figure()
+            # plot            
+            fig = plt.figure(figsize=(10,6))
             ax1 = fig.add_subplot(121, projection='3d')
             ax1.plot_wireframe(_x, _y, _z, linewidth=0.3, color = 'orange', label='Predected data')
             ax1.scatter(x1, x2, x3, label='Observed data')
-            # ax1.view_init(elev=10, azim=4)  # elev: z, azim:x,y
+            ax1.view_init(elev=5, azim=3)  # elev: z, azim:x,y
             ax1.set(xlabel="$x_1$", ylabel="$x_2$", zlabel="$x_3$", title=f'{name}' + f'  dim={dim}')
             ax1.legend()
             
             ax2 = fig.add_subplot(122, projection='3d')
             ax2.scatter(x1, x2, x3, label='Observed data')
-            # ax2.view_init(elev=10, azim=4)
+            ax2.view_init(elev=5, azim=3)
             ax2.set(xlabel="$x_1$", ylabel="$x_2$", zlabel="$x_3$", title=f'{name}')
             ax2.legend()
             
-            plt.tight_layout()
+            plt.subplots_adjust(left=0.05, right=0.9, top=0.9, wspace=0.2, hspace=0.35)
             plt.savefig(f'{name}_dim{dim}.png')
-            # plt.savefig(f'{name}_dim{dim}_turned.png')
+            plt.savefig(f'{name}_dim{dim}_turned.png')
             plt.show()
             plt.close()
 
