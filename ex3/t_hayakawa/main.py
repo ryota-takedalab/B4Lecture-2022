@@ -15,23 +15,23 @@ def regression_2d(x, y, dimension, lamda):
     Returns:
         ndarray, str: weight, equation name
     """
-    phi = np.array([x**n for n in range(dimension+1)]).T
+    xx = np.array([x**n for n in range(dimension+1)]).T
     iden_mat = np.eye(dimension+1)
-    w = np.dot(np.dot(np.linalg.inv(np.dot(phi.T, phi)+lamda*iden_mat), phi.T), y)
+    a = np.dot(np.dot(np.linalg.inv(np.dot(xx.T, xx)+lamda*iden_mat), xx.T), y)
 
     _x = np.linspace(x.min(), x.max(), 100)
-    _y = np.array([np.dot(w, np.array([_x**n for n in range(dimension+1)]))])
+    _y = np.array([np.dot(a, np.array([_x**n for n in range(dimension+1)]))])
 
     #equation name
     name = ""
     for i in range(dimension+1):
         if i > 0:
             if(i > 1):
-                name += "+"+f"{w[i]:.3f}"+f"x^{{{i}}}"
+                name += "+"+f"{a[i]:.3f}"+f"x^{{{i}}}"
             else:
-                name += "+"+f"{w[i]:.3f}"+"x"
+                name += "+"+f"{a[i]:.3f}"+"x"
         else:
-            name += f'{w[i]:.3f}'
+            name += f'{a[i]:.3f}'
     name = "$\lambda="+f"{lamda}"+",y="+name+"$"
 
     return _x, _y[0, :], name
@@ -50,32 +50,32 @@ def regression_3d(x0, x1, y, dimension, lamda):
     Returns:
         ndarray, str: weight, equation name
     """
-    phi = np.zeros([x0.size, (dimension+1)*2])
-    phi[:, :dimension+1] = np.array([x0**n for n in range(dimension+1)]).T
-    phi[:, dimension+1:] = np.array([x1**n for n in range(dimension+1)]).T
+    xx = np.zeros([x0.size, (dimension+1)*2])
+    xx[:, :dimension+1] = np.array([x0**n for n in range(dimension+1)]).T
+    xx[:, dimension+1:] = np.array([x1**n for n in range(dimension+1)]).T
     iden_mat = np.eye((dimension+1)*2)
-    w = np.dot(np.dot(np.linalg.pinv(
-        np.dot(phi.T, phi)+lamda*iden_mat), phi.T), y)
+    a = np.dot(np.dot(np.linalg.pinv(
+        np.dot(xx.T, xx)+lamda*iden_mat), xx.T), y)
 
     #equation name
     name = ""
     for i in range(dimension+1):
         if i > 0:
             if(i > 1):
-                name += "+"+f"{w[i]:.3f}"+f"x_0^{{{i}}}"
+                name += "+"+f"{a[i]:.3f}"+f"x_0^{{{i}}}"
             else:
-                name += "+"+f"{w[i]:.3f}"+f"x_0"
+                name += "+"+f"{a[i]:.3f}"+f"x_0"
     for i in range(dimension+1):
         if i > 0:
             if(i > 1):
-                name += "+"+f"{w[i+dimension+1]:.3f}"+f"x_1^{{{i}}}"
+                name += "+"+f"{a[i+dimension+1]:.3f}"+f"x_1^{{{i}}}"
             else:
-                name += "+"+f"{w[i+dimension+1]:.3f}"+f"x_1"
+                name += "+"+f"{a[i+dimension+1]:.3f}"+f"x_1"
 
-    name = f'{w[0]+w[dimension+1]:.3f}'+name
+    name = f'{a[0]+a[dimension+1]:.3f}'+name
     name = "$\lambda="+f"{lamda}"+",y="+name+"$"
 
-    return w, name
+    return a, name
 
 
 def main():
@@ -107,7 +107,7 @@ def main():
         plt.show()
 
     if x.shape[1] == 2:
-        w, name = regression_3d(x[:, 0], x[:, 1], y, args.dim, args.lamda)
+        a, name = regression_3d(x[:, 0], x[:, 1], y, args.dim, args.lamda)
 
         #calcurate "y" using weight
         x0 = np.linspace(x[:, 0].min(), x[:, 0].max(), 100)
@@ -115,7 +115,7 @@ def main():
         _x0, _x1 = np.meshgrid(x0, x1)
         _y = np.zeros(_x0.shape)
         for i in range(args.dim+1):
-            _y += w[i]*(_x0**i)+w[i+args.dim+1]*(_x1**i)
+            _y += a[i]*(_x0**i)+a[i+args.dim+1]*(_x1**i)
 
         #plot
         fig = plt.figure(figsize=(10, 8))
