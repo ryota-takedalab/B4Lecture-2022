@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
 
 
 def regression_2d(data, title, dim=1,
@@ -45,10 +47,20 @@ def regression_2d(data, title, dim=1,
     for i in range(len(coefficient) - 1):
         label += " + " + "{:.3g}".format(coefficient[i + 1]) \
             + f"$x^{i+1}$"
+    # label = "estimated"
+    # print(coefficient)
     ax.plot(x_plot[:, 0], y_reg, color="red", label=label)
     ax.legend(fontsize=20)
     plt.savefig(f"{title}_{dim}th_polynomial.png")
     plt.show()
+
+    # evaluete model
+    y_true = data[:, 1]
+    y_pred = np.concatenate([np.ones((len(data), 1)), data_regression[:, :-1]], 1) @ coefficient
+    rsme = np.sqrt(mean_squared_error(y_true, y_pred))
+    print(f"rsme: {rsme}")
+    r2 = r2_score(y_true, y_pred)
+    print(f"r2: {r2}")
         
         
 def regression_3d(data, title, dim=1,
