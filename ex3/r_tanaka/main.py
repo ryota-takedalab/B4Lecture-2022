@@ -3,6 +3,47 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def latex_for_polynomial_regression(deg, coef):
+    """prepare a label in latex format for the graph of polynomial regression
+
+    Args:
+        deg (int): degree for multiple regression
+        coef (ndarray): partial regression coefficients
+
+    Returns:
+        str: a label in latex format
+    """
+    formula = str("$y=")
+    for i in range(deg):
+        formula += (str(round(coef[i][0], 2))+"x^{"+str(i)+"}+")
+    formula += (str(round(coef[i+1][0], 2))+"x^{"+str(i+1)+"}$")
+    return formula
+
+
+def latex_for_maltiple_regression(deg, coef):
+    """prepare a label in latex format for the graph of maltiple regression
+
+    Args:
+        deg (int): degree for multiple regression
+        coef (ndarray): partial regression coefficients
+
+    Returns:
+        str: a label in latex format
+    """
+    formula = str("$y=")
+    w = 0
+    for i in range(deg):
+        for k in range(deg + 1 - i):
+            formula += (str(round(coef[w][0], 2))+"x1^{"+str(i)+"}x2^{"+str(k)+"}+")
+            w += 1
+    i += 1
+    for k in range(deg - i):
+        formula += (str(round(coef[w][0], 2))+"x1^{"+str(i)+"x2^{"+str(k)+"}+")
+        w += 1
+    formula += (str(round(coef[w][0], 2))+"x1^{"+str(i)+"}x2^{"+str(k+1)+"}$")
+    return formula
+
+
 def plot_linear_regression(x_input, y_input, ax):
     """plot linear regression
 
@@ -20,7 +61,7 @@ def plot_linear_regression(x_input, y_input, ax):
     y = a * x + b
 
     # plot
-    ax.plot(x, y, color='r', label="regressed")
+    ax.plot(x, y, color='r', label="y={:.1f}x+{:.1f}".format(a, b))
     ax.legend()
 
 
@@ -35,36 +76,34 @@ def plot_polynomial_regression(x_input, y_input, deg, ax, alpha=1.0):
         alpha(float): regularization term
     """
     # create array X
-    list = []
-    for x in x_input:
-        tmp = []
-        for j in range(0, deg + 1):
-            tmp.append(x ** j)
-        list.append(tmp)
-    X = np.array(list, dtype=float)
+    j = np.arange(deg+1)
+    # x_input[:,np.newaxis].shape==(datasize, 1)
+    # j[np.newaxis,:].shape==(1, deg+1)
+    # (datasize, deg+1) <- (datasize, 1) ** (1, deg+1)
+    X = x_input[:, np.newaxis]**j[np.newaxis, :]
 
     # prepare for regularization
     alpha = float(alpha)
     eye = np.eye(X.shape[1])
 
     # vectorize y_input
-    vec_y = np.array([[y] for y in y_input])
+    vec_y = y_input[:, np.newaxis]
 
     # find the partial regression coefficient
     coef = ((np.linalg.inv(X.T @ X + alpha * eye)) @ X.T) @ vec_y
 
-    # prepare x from 0 to 10 in increments of 0.1
-    x_axis = np.arange(0, 10, 0.1)
+    # prepare x as an equally spaced array from 0 to 10 with 100 elements
+    x_axis = np.linspace(0, 10, 100)
 
-    y_axis = []
-    for z in x_axis:
-        val = 0
-        for i in range(len(coef)):
-            val += coef[i] * z ** i
-        y_axis.append(val)
+    # find y from the partial regression coefficients
+    j = np.arange(len(coef))
+    y_axis = (x_axis[:, np.newaxis] ** j[np.newaxis, :]) @ coef
+
+    # prepare labels for the graph
+    formula = latex_for_polynomial_regression(deg, coef)
 
     # plot
-    ax.plot(x_axis, y_axis, color='r', label="regressed")
+    ax.plot(x_axis, y_axis, color='r', label=formula)
     ax.legend()
 
 
@@ -75,12 +114,12 @@ def multiple_regression(x_input1, x_input2, y_input, deg, ax, alpha=1.0):
         x_input1 (ndarray): explanatory variable
         x_input2 (ndarray): explanatory variable
         y_input (ndarray): response variable
-        deg (int): degree for polynomial regression
+        deg (int): degree for multiple regression
         ax (list): list of axes objecs
         alpha(float): regularization term
     """
     # vectorize y_input
-    vec_y = np.array([[y] for y in y_input])
+    vec_y = y_input[:, np.newaxis]
 
     # create array X
     list_X = []
@@ -103,6 +142,7 @@ def multiple_regression(x_input1, x_input2, y_input, deg, ax, alpha=1.0):
     # generate mesh grid
     x1, x2 = np.meshgrid(np.linspace(-5, 5, 100), np.linspace(0, 10, 100))
 
+    # find y from the partial regression coefficients
     y = 0
     w = 0
     for i in range(deg + 1):
@@ -110,7 +150,11 @@ def multiple_regression(x_input1, x_input2, y_input, deg, ax, alpha=1.0):
             y += coef[w] * (x1 ** i) * (x2 ** k)
             w += 1
 
-    ax.plot_wireframe(x1, x2, y, color='r', label="regressed")
+    # prepare labels for the graph
+    formula = latex_for_maltiple_regression(deg, coef)
+
+    # plot
+    ax.plot_wireframe(x1, x2, y, color='r', label=formula)
     ax.legend()
 
 
