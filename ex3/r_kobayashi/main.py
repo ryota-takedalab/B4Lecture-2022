@@ -29,7 +29,7 @@ def round_num(x, degit):
     x_rounded = decimal.Decimal(str(x)).quantize(decimal.Decimal(str(10 ** (x_degits - degit + 1))), rounding = "ROUND_HALF_UP")
     return x_rounded
 
-# 数式をきれいに表示するための関数
+# 数式を表示するための関数
 def latexfunc(a, deg_x, deg_y = None):
     x = Symbol("x")
     f = 0
@@ -74,7 +74,7 @@ def main(args):
             y_hat += a[i] * x ** i
         # 平均二乗誤差
         mse = round_num(np.mean((y - y_hat) ** 2), 2)
-        print("msr:", mse)
+        print("mse:", mse)
         fig = plt.figure()
         ax = fig.add_subplot(111, xlabel = "X", ylabel = "Y")
         ax.scatter(x, y, s = 12, c = "darkblue", label = "observed")
