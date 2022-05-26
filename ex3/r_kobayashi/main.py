@@ -1,17 +1,18 @@
-# include flake8, black
-
 import argparse
 import os
-
+import math
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sympy import latex, Symbol
+import decimal
 
 def regression_2d(x, y, deg, lam):
     phi = np.array([[p ** i for i in range(deg + 1)] for p in x])
+    print("phi:", phi)
     a = np.linalg.inv(phi.T @ phi + lam * np.eye(deg + 1)) @ phi.T @ y
+    print("a:", a)
     return a
 
 def regression_3d(x, y, z, deg_x, deg_y, lam):
@@ -21,16 +22,23 @@ def regression_3d(x, y, z, deg_x, deg_y, lam):
     a = np.linalg.inv(phi.T @ phi + lam * np.eye(deg_x + deg_y + 1)) @ phi.T @ z
     return a
 
+def round_num(x, degit):
+    # print("x:", x)
+    x_degits = math.floor(math.log10(abs(x)))
+    # print("x_degits:", x_degits)
+    x_rounded = decimal.Decimal(str(x)).quantize(decimal.Decimal(str(10 ** (x_degits - degit + 1))), rounding = "ROUND_HALF_UP")
+    return x_rounded
+
 # 数式をきれいに表示するための関数
 def latexfunc(a, deg_x, deg_y = None):
     x = Symbol("x")
     f = 0
     for i in range(deg_x + 1):
-        f += round(a[i], 2) * x ** i
+        f += round_num(a[i], 2) * x ** i
     if deg_y is not None:
         y = Symbol("y")
         for i in range(deg_y):
-            f += round(a[deg_x + i + 1], 2) * y ** (i + 1)
+            f += round_num(a[deg_x + i + 1], 2) * y ** (i + 1)
     f = latex(f)
     return f
 
@@ -48,8 +56,9 @@ def main(args):
     path = os.path.dirname(os.path.abspath(__file__))
     graphtitle = my_removesuffix(fname, ".csv")
     fname = os.path.join(path, "data", fname)
-    save_fname = os.path.join(path, "result", save_fname)
     data = pd.read_csv(fname).values
+    if save_fname != None:
+        save_fname = os.path.join(path, "result", save_fname)
 
     if data.shape[1] == 2:
         x = data[:, 0]
@@ -64,8 +73,8 @@ def main(args):
             reg_y += a[i] * reg_x ** i
             y_hat += a[i] * x ** i
         # 平均二乗誤差
-        mse = round(np.mean((y - y_hat) ** 2), 3)
-
+        mse = round_num(np.mean((y - y_hat) ** 2), 2)
+        print("msr:", mse)
         fig = plt.figure()
         ax = fig.add_subplot(111, xlabel = "X", ylabel = "Y")
         ax.scatter(x, y, s = 12, c = "darkblue", label = "observed")
@@ -79,7 +88,8 @@ def main(args):
             +"$"
         )
         ax.legend(loc = "best", fontsize = 10)
-        plt.savefig(save_fname)
+        if save_fname != None:
+            plt.savefig(save_fname)
         plt.show()
 
     elif data.shape[1] == 3:
@@ -120,20 +130,27 @@ def main(args):
             zlabel = "Z",
         )
         ax.legend(loc = "best", fontsize = 10)
-        plt.savefig(save_fname.replace("gif", "png"))
+        if save_fname != None:
+            plt.savefig(save_fname.replace("gif", "png"))
 
         def update(i):
             ax.view_init(elev = 30.0, azim = 3.6 * i)
             return fig
         
         ani = animation.FuncAnimation(fig, update, frames = 100, interval = 100)
-        ani.save(save_fname, writer = "pillow")
+        if save_fname != None:
+            ani.save(save_fname, writer = "pillow")
         plt.show()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Regression and Regularization.")
     parser.add_argument("fname", type = str, help = "Load Filename")
-    parser.add_argument("save_fname", type = str, help = "Wave Filename")
+    parser.add_argument(
+        "-s",
+        "--save_fname",
+        type = str,
+        help = "Wave Filename",
+        )
     parser.add_argument(
         "-x",
         "--deg_x",
