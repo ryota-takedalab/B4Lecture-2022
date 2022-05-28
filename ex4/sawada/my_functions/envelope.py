@@ -37,17 +37,13 @@ def envelope_cepstrum(data):
 # TODO: おかしい
 def envelope_lpc(data, p, fs):
     # TODO: docstring
-    length = len(data)
     auto_correlation = f0.auto_correlation(data)
     
-    toeplitz = np.zeros((length, length))
-    for i in range(length):
-        toeplitz[i:, i] = auto_correlation[i:]
-        toeplitz[i, i:] = auto_correlation[i:]
-    
-    # alphas = solve_toeplitz(toeplitz, auto_correlation)
-    alphas = scipy.linalg.solve_toeplitz(auto_correlation, -auto_correlation)
-    
+    alphas = solve_toeplitz(auto_correlation[:p],
+                            -auto_correlation[1:p + 1])
+    # alphas = scipy.linalg.solve_toeplitz(auto_correlation[:p],
+    #                                      -auto_correlation[1:p + 1])
+    alphas = np.append([1], alphas)  # add constant term
     w, h = scipy.signal.freqz(1, alphas, fs=fs)
     
     # fig = plt.figure(figsize=(10, 10))
@@ -59,26 +55,33 @@ def envelope_lpc(data, p, fs):
 
 # TODO: おかしい
 def solve_toeplitz(x, b):
-    if (x.shape[0] != x.shape[1] or x.shape[1] != len(b)):
-        raise ValueError("wrong shape")
     dimension = len(b)
+    if (dimension != len(x)):
+        raise ValueError("wrong shape")
+    toeplitz = np.zeros((dimension, dimension))
+    for i in range(dimension):
+        toeplitz[i:, i] = x[i:]
+        toeplitz[i, i:] = x[i:]
     answers = np.zeros(dimension)
     residual_error = np.zeros(dimension)
-    
-    # base stage
-    answers[0] = -1 * x[1, 1] / x[0, 0]
-    residual_error[0] = x[0, 0] + answers[0] * x[1, 1]
-    
-    # recursive stage
-    for i in range(dimension - 1):
-        lambda_ = 0
-        for j in range(i + 2):
-            lambda_ -= answers[j] * b[i + 1 - j]
-        lambda_ /= residual_error[i]
+    if True:
+        # とりあえず愚直に逆行列で…
+        answers = np.linalg.inv(toeplitz) @ -b
+    else:
+        # base stage
+        answers[0] = -1 * toeplitz[1, 1] / toeplitz[0, 0]
+        residual_error[0] = toeplitz[0, 0] + answers[0] * toeplitz[1, 1]
         
-        answers[: i + 2] = (np.concatenate([[1], answers[: i + 1], [0]]) +
-                            lambda_ *
-                            np.concatenate([[0], answers[: i + 1], [1]]))[1:]
-        residual_error[i + 1] = (1 - np.power(lambda_, 2)) * residual_error[i]
-    
+        # recursive stage
+        for i in range(dimension - 1):
+            lambda_ = 0
+            for j in range(i + 2):
+                lambda_ -= answers[j] * b[i + 1 - j]  # NOTE: 怪しい
+            lambda_ /= residual_error[i]
+            
+            answers[: i + 2] = (np.concatenate([[1], answers[: i + 1], [0]]) +
+                                lambda_ *
+                                np.concatenate([[0], answers[: i + 1], [1]]))[1:]
+            residual_error[i + 1] = (1 - np.power(lambda_, 2)) * residual_error[i]
+        
     return answers

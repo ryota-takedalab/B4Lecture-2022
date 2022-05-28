@@ -74,8 +74,8 @@ if __name__ == "__main__":
     ax3.legend()
     
     # envelope based on LPC
-    p = 20
-    envelope_lpc_wav = envelope.envelope_lpc(target_frame, 20, fs)
+    p = 32
+    envelope_lpc_wav = envelope.envelope_lpc(target_frame, p, fs)
     ax4 = fig.add_subplot(224)
     ax4.set_title("envelope based on LPC")
     ax4.set_xlabel("Frequency [Hz]")
