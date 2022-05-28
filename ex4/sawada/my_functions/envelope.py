@@ -39,10 +39,10 @@ def envelope_lpc(data, p, fs):
     # TODO: docstring
     auto_correlation = f0.auto_correlation(data)
     
-    alphas = solve_toeplitz(auto_correlation[:p],
-                            -auto_correlation[1:p + 1])
-    # alphas = scipy.linalg.solve_toeplitz(auto_correlation[:p],
-    #                                      -auto_correlation[1:p + 1])
+    # alphas = solve_toeplitz(auto_correlation[:p],
+    #                         -auto_correlation[1:p + 1])
+    alphas = scipy.linalg.solve_toeplitz(auto_correlation[:p],
+                                         -auto_correlation[1:p + 1])
     alphas = np.append([1], alphas)  # add constant term
     w, h = scipy.signal.freqz(1, alphas, fs=fs)
     
@@ -60,8 +60,9 @@ def solve_toeplitz(x, b):
         raise ValueError("wrong shape")
     toeplitz = np.zeros((dimension, dimension))
     for i in range(dimension):
-        toeplitz[i:, i] = x[i:]
-        toeplitz[i, i:] = x[i:]
+        toeplitz[i:, i] = x[:dimension - i]
+        toeplitz[i, i:] = x[:dimension - i]
+    print(toeplitz)
     answers = np.zeros(dimension)
     residual_error = np.zeros(dimension)
     if True:
@@ -69,11 +70,13 @@ def solve_toeplitz(x, b):
         answers = np.linalg.inv(toeplitz) @ -b
     else:
         # base stage
-        answers[0] = -1 * toeplitz[1, 1] / toeplitz[0, 0]
-        residual_error[0] = toeplitz[0, 0] + answers[0] * toeplitz[1, 1]
+        answers[0] = -1 * x[1] / x[0]
+        residual_error[0] = x[0] + answers[0] * x[1]
+        print(f"{toeplitz[0, 0]} + {answers[0]} * {toeplitz[1, 0]}")
         
         # recursive stage
         for i in range(dimension - 1):
+            print(i)
             lambda_ = 0
             for j in range(i + 2):
                 lambda_ -= answers[j] * b[i + 1 - j]  # NOTE: 怪しい
