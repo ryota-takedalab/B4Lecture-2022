@@ -39,10 +39,10 @@ def envelope_lpc(data, p, fs):
     # TODO: docstring
     auto_correlation = f0.auto_correlation(data)
     
-    # alphas = solve_toeplitz(auto_correlation[:p],
-    #                         -auto_correlation[1:p + 1])
-    alphas = scipy.linalg.solve_toeplitz(auto_correlation[:p],
-                                         -auto_correlation[1:p + 1])
+    alphas = solve_toeplitz(auto_correlation[:p],
+                            -auto_correlation[1:p + 1])
+    # alphas = scipy.linalg.solve_toeplitz(auto_correlation[:p],
+    #                                      -auto_correlation[1:p + 1])
     alphas = np.append([1], alphas)  # add constant term
     w, h = scipy.signal.freqz(1, alphas, fs=fs)
     
