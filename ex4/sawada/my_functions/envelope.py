@@ -26,7 +26,7 @@ def envelope_cepstrum(data):
         data (ndarray, axis=(time, )): input data
 
     Returns:
-        ndarray, axis=(frequency, ): spectram envelope based on cepstrum
+        ndarray, axis=(frequency, ): spectrum envelope based on cepstrum
     """
     data_cepstrum = cepstrum.cepstrum(data)
     lp_lifter = cepstrum.craete_lifter(len(data), cutoff_frame=20)
@@ -34,17 +34,35 @@ def envelope_cepstrum(data):
 
 
 def envelope_lpc(data, p, fs):
-    # TODO: docstring
+    """spectrum envelope based on LPC
+
+    Args:
+        data (ndarray, axis=(time, )): input data
+        p (int): dimension of LPC
+        fs (int): sampling rate
+
+    Returns:
+        ndarray(axis=(frequency, )): spectrum envelope based on LPC
+    """
     data = data * np.hanning(len(data))
     auto_correlation = f0.auto_correlation(data)
     alphas, e = levinson_durbin(auto_correlation, p)
+    # np.sqrt(e) adjusts dB scale
     w, h = scipy.signal.freqz(np.sqrt(e), alphas, whole=True, fs=fs)
     
     return 20 * np.log10(np.abs(h))
 
 
 def levinson_durbin(x, dimension):
-    # TODO: docstring
+    """Levinson-Durbin algorithm for LPC
+
+    Args:
+        x (ndarray, axis=(lag, )): auto correlation
+        dimension (int): dimension of LPC
+
+    Returns:
+        ndarray(axis=(dimension, )): coefficients in z-area
+    """
     answers = np.zeros(dimension + 1)
     
     # base stage
