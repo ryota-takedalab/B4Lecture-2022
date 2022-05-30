@@ -87,4 +87,4 @@ if __name__ == "__main__":
     ax4.legend()
     
     plt.show()
-    fig.savefig("result_voice_my.png")
+    # fig.savefig("result_voice_my.png")
