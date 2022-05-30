@@ -7,12 +7,6 @@ import numpy as np
 import librosa
 from matplotlib import pyplot as plt
 
-def pre_emphasis(data, p):
-    pre_data = np.zeros(len(data))
-    for i in range(1, len(data)):
-        pre_data[i] = data[i] - p * data[i - 1]
-    return pre_data
-
 def main():
     parser = argparse.ArgumentParser()
 
@@ -34,8 +28,10 @@ def main():
 
     # calculate fundamental frequency (f0) by autocorrelation
     f0_ac = ceps.calc_ac(data, shift_size, samplerate)
+    print('f0_ac', f0_ac)
     # calculate fundamental frequency (f0) by cepstrum
     f0_cep = ceps.calc_cep(data, shift_size, samplerate)
+    print('f0_cep', f0_cep)
     
     # plot f0 with spectrogram
     plt.figure(figsize=(10,7))
@@ -47,7 +43,7 @@ def main():
     plt.plot(np.arange(0, time, time / len(f0_cep)), f0_cep, color = 'b', label='Cepstrum', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('f0.png')
+    # plt.savefig('f0_piano.png')
     plt.show()
     plt.close()
 
@@ -77,7 +73,7 @@ def main():
     plt.plot(fscale[: shift_size//2], env_lpc[:len(env_lpc)//2], color = 'purple', label = 'LPC', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('spectral.png')
+    # plt.savefig('spectral_piano.png')
     plt.show()
     plt.close()
 
