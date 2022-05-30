@@ -56,7 +56,8 @@ if __name__ == "__main__":
 
     # envelope
     frame_length = 512
-    target_start_frame = len(wav) // 4
+    # target_start_frame = int(len(wav) * 0.176)
+    target_start_frame = int(len(wav) * 0.176)
     target_frame = wav[target_start_frame: target_start_frame + frame_length]
     log_spectrum_wav = envelope.log_spectrum(target_frame)
     f = np.linspace(0, fs // 2, frame_length // 2)
@@ -69,13 +70,14 @@ if __name__ == "__main__":
     ax3.set_ylabel("Amplitude [dB]")
     ax3.plot(f, log_spectrum_wav[:frame_length // 2],
              label="log amplitude")
-    ax3.plot(f, envelope_cepstrum_wav[0: frame_length // 2],
+    ax3.plot(f, 20 * envelope_cepstrum_wav[0: frame_length // 2],
              label="sprctrum envelope")
     ax3.legend()
     
     # envelope based on LPC
-    p = 20
+    p = 32
     envelope_lpc_wav = envelope.envelope_lpc(target_frame, p, fs)
+    # envelope_lpc_wav = envelope.lpc(target_frame * np.hanning(len(target_frame)), p, 512)
     ax4 = fig.add_subplot(224)
     ax4.set_title("envelope based on LPC")
     ax4.set_xlabel("Frequency [Hz]")
@@ -87,4 +89,4 @@ if __name__ == "__main__":
     ax4.legend()
     
     plt.show()
-    fig.savefig("result_voice_scipy.png")
+    fig.savefig("result_voice_my.png")

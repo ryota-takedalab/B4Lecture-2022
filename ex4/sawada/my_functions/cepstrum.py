@@ -19,7 +19,7 @@ def cepstrum(data):
     fft_data = np.fft.fft(windowed_data)
     
     # log amplitude
-    log_data = np.log(np.abs(fft_data))
+    log_data = np.log10(np.abs(fft_data))
     
     # cepstrum
     return np.real(np.fft.ifft(log_data))
