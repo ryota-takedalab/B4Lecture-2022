@@ -29,8 +29,25 @@ def main():
     # calculate fundamental frequency (f0) by autocorrelation
     f0_ac = ex4func.calc_ac(data, shift_size, samplerate)
     # calculate fundamental frequency (f0) by cepstrum
-    f0_cep = ex4func.calc_cep(data, shift_size, samplerate)
-    
+    f0_cep = ex4func.calc_cep(data, shift_size, samplerate, f_lifter)
+
+    # spectrogram by librosa.stft()
+    plt.figure()
+    plt.title('Fundamental Frequency')
+    plt.xlabel('Time[s]')
+    plt.ylabel('Frequency[Hz]')
+    D = librosa.stft(data)  # STFT
+    S, phase = librosa.magphase(D)  # convert complex to magnitude & phase
+    Sdb = librosa.amplitude_to_db(S)  # convert magnitude to dB
+    librosa.display.specshow(Sdb, sr=samplerate, x_axis='time', y_axis='log')  # plot spectrogram
+    plt.plot(np.arange(0, time, time / len(f0_ac)), f0_ac, color = 'deeppink', label='AutoCorrelation', linewidth = 2.0)
+    plt.plot(np.arange(0, time, time / len(f0_cep)), f0_cep, color = 'b', label='Cepstrum', linewidth = 2.0)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('f0_librosa_voice.png')
+    plt.show()
+    plt.close()
+
     # plot f0 with spectrogram
     plt.figure(figsize=(8,6))
     plt.title('Fundamental Frequency')
@@ -42,7 +59,7 @@ def main():
     plt.plot(np.arange(0, time, time / len(f0_cep)), f0_cep, color = 'b', label='Cepstrum', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('f0_test.png')
+    plt.savefig('f0_voice.png')
     plt.show()
     plt.close()
 
@@ -52,7 +69,7 @@ def main():
     fft_data = np.fft.fft(win_data)
     power_spec = 20 * np.log10(np.abs(fft_data))
 
-    fscale = np.fft.fftfreq(shift_size, d=1.0/samplerate)   # frequency scale
+    fscale = np.fft.fftfreq(shift_size, d=1.0/samplerate)  # frequency scale
 
     # calculate spectral envelope by cepstrum
     cep = ex4func.cepstrum(win_data)  # fft, log, fft
@@ -62,7 +79,7 @@ def main():
 
     # calculate spectral envelope by LPC
     env_lpc = ex4func.lpc(win_data, 32, shift_size)
-    
+
     # plot spectral envelope
     plt.figure(figsize=(8,6))
     plt.title('Spectral Envelope')
@@ -73,7 +90,7 @@ def main():
     plt.plot(fscale[: shift_size//2], env_lpc[:len(env_lpc)//2], color = 'purple', label = 'LPC', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('spectral_test.png')
+    plt.savefig('spectral_voice.png')
     plt.show()
     plt.close()
 

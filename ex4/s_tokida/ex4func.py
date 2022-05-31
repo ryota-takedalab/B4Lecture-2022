@@ -15,6 +15,7 @@ def autocorrelation(data):
     r = np.zeros(len(data))
     for m in range (data.shape[0]):
         r[m] = (data[:data.shape[0]-m]*data[m:data.shape[0]]).sum()
+        
     return r
 
 def calc_ac(data, shift_size, samplerate):
@@ -61,9 +62,10 @@ def cepstrum(data):
     fft_data =np.fft.fft(data)
     power_spec = np.log10(np.abs(fft_data))
     cep = np.real(np.fft.ifft(power_spec)).real
+
     return cep
 
-def calc_cep(data, shift_size, samplerate):
+def calc_cep(data, shift_size, samplerate, f_lifter):
     """get F0 by cepstrum
 
      Args:
@@ -75,22 +77,23 @@ def calc_cep(data, shift_size, samplerate):
          f0 (ndarray): F0 list
      """
 
-    overlap = shift_size//2
+    overlap = shift_size//4
+    # times to shift
     shift = int((data.shape[0] - overlap)/overlap)
     f0 = np.zeros(shift)
     win = np.hamming(shift_size)
 
-    for t in range(shift):
-        shift_data = data[int(t*overlap):int(t*overlap+shift_size)] * win
-        # auto correlation
+    for t in range(shift-2):
+        shift_data = data[t*overlap : t*overlap + shift_size] * win
+        # define cepstrum
         cep = cepstrum(shift_data)
         # peak
-        m0 = detect_peak(cep)
+        m0 = detect_peak(cep[f_lifter:])
         if m0 == 0:
             f0[t] = 0
         else:
-            f0[t] = samplerate / m0
-            
+            f0[t] = samplerate / (m0+f_lifter)
+
     return f0
 
 def detect_peak(r):
@@ -108,6 +111,7 @@ def detect_peak(r):
         if r[i]<r[i+1] and r[i+1]>r[i+2]:
             peak[i] = r[i+1]
     m0 = np.argmax(peak)
+
     return m0
 
 def levinson_durbin(r, order):
@@ -153,4 +157,5 @@ def lpc(data, order, shift_size):
 
     h = signal.freqz(np.sqrt(e), a, shift_size, 'whole')[1]  # Exponential transformation
     env_lpc = 20*np.log10(np.abs(h))
+
     return env_lpc
