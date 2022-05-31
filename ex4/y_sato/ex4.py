@@ -125,6 +125,8 @@ def lpc(signal, p, sr, window=1024):
         env(ndarray, (axis=(frequency, ))): spectrum envelope based on LPC
     """
 
+    win_fc = np.hamming(window)
+    signal *= win_fc
     ac = autocorrelation(signal, window)
     r = ac[: p + 1]  # r0 ~ rp
 
@@ -137,9 +139,11 @@ def lpc(signal, p, sr, window=1024):
 
 
 def levinson_durbin(r):
-   """Levinson-Durbin algorithm for LPC
+    """Levinson-Durbin algorithm for LPC
+
     Args:
         r (ndarray): auto correlation
+
     Returns:
         alpha (ndarray): Linear prediction coefficient
         e (float):
@@ -287,7 +291,6 @@ if __name__ == "__main__":
     signal = original_signal[t_sample : t_sample + window]
     win_fc = np.hamming(window)
 
-    signal *= win_fc
 
     tmp = signal * win_fc
     t_original_spec = np.fft.fft(tmp)
