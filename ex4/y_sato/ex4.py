@@ -9,6 +9,15 @@ import scipy
 
 
 def autocorrelation(signal, window=1024):
+    """calculate auto correlation
+
+    Args:
+        signal(ndarray, axis=(time, )) : input data
+
+    Returns:
+        ndarray, axis=(frequency, ) : auto correlation signal
+    """
+
     spec = np.fft.rfft(signal, window*2)
     power = np.abs(spec) ** 2
     ac = np.fft.irfft(power)
@@ -17,6 +26,15 @@ def autocorrelation(signal, window=1024):
 
 
 def peak(data, threshold=0):
+    """detect peak from signal
+
+    Args:
+        data (ndarray): input signal
+
+    Return:
+        ndarray : peak list
+    """
+
     peak = []
     # exclude the beginning(first peak) and the end
     for i in range(threshold, data.shape[0] - 2):
@@ -26,11 +44,22 @@ def peak(data, threshold=0):
 
 
 def calc_ac(signal, window=1024):
+    """get F0 list by autocorrelation
+
+    Args:
+        signal (ndarray): input signal
+        window (int): Length of window. Default to 1024.
+
+    Returns:
+        Z (ndarray): F0 list
+    """
+
     Z = []
     for i in range((signal.shape[0] - window) // step):
         #ループはSTFTと同じ雰囲気
         r = autocorrelation(signal[i*step : i*step + window], window=window)
         peaks = peak(r)
+        #最大ピークp：r(m)は減衰するため
         p = peaks[np.argmax(peaks, axis=0)][1][0]
         f0 = sr / p
         Z.append(f0)
@@ -39,6 +68,20 @@ def calc_ac(signal, window=1024):
 
 
 def cepstrum(signal, threshold, sr, window):
+    """get f0, envelope, micro by cepstrum
+
+    Args:
+        signal (ndarray, axis=(time,)): input signal
+        threshold (int): threshold of envelope and micro
+        sr (int): sampling rate
+        window (int): Length of window
+
+    Returns:
+        f0 (float): estimated F0
+        env (ndarray, axis=(frequency, )): estimated spectrum envelope
+        micro (ndarray, axis=(frequency, )): estimated micro
+    """
+
     #フーリエ変換
     win_fc = np.hamming(window)
     tmp = signal * win_fc
@@ -70,33 +113,68 @@ def cepstrum(signal, threshold, sr, window):
 
 
 def lpc(signal, p, sr, window=1024):
+    """spectrum envelope based on LPC
+
+    Args:
+        signal (ndarray, axis=(time, )): input signal
+        p (int): dimension of LPC
+        sr (int): sampling rate
+
+    Returns:
+        w (float): Length of envelope
+        env(ndarray, (axis=(frequency, ))): spectrum envelope based on LPC
+    """
 
     ac = autocorrelation(signal, window)
     r = ac[: p + 1]  # r0 ~ rp
-
 
     a, e = levinson_durbin(r)
     w, h = scipy.signal.freqz(e, a)
     w = sr * w / 2 / np.pi
     env = 20 * np.log10(h)
+
     return w, env
 
 
 def levinson_durbin(r):
+   """Levinson-Durbin algorithm for LPC
+    Args:
+        r (ndarray): auto correlation
+    Returns:
+        alpha (ndarray): Linear prediction coefficient
+        e (float):
+    """
+
     alpha = np.zeros_like(r)
     alpha[0] = 1.0 #これで添え字がインデックスと揃う
     alpha[1] = -r[1] / r[0]
     sigma = r[0] + r[1] * alpha[1]
+
     for p in range(1, alpha.shape[0]):
         w = np.sum(alpha[: p + 1] * r[p :: -1])
         k = w / sigma #kp = wp /sigmap
         sigma = sigma - k * w #sigma(p+1) = sigma(p) - kp*wp
         alpha[1 : p + 1] = alpha[1 : p + 1] - k * alpha[p - 1  :: -1] #a(p+1) = a(p) - kpa(p)
     e = np.sqrt(sigma)
+
     return alpha, e
 
 
 def calc_cep(signal, threshold, sr, window=1024):
+    """calculate cepstrum of whole signal
+
+    Args:
+        signal (ndarray, axis=(time, )): input signal
+        threshold (int): threshold of envelope and micro
+        sr(int): sampling rate
+        window: Length of window
+
+    Returns:
+        f0series(ndarray, axis=(time, )): f0 list
+        envseries(ndarray, axis=(time, frequency)): estimated spectrum envelope list
+        microseries(ndarray, axis=(time, frequency)): estimated spectrum micro list
+
+    """
 
     f0series = []
     envseries = []
@@ -118,6 +196,17 @@ def calc_cep(signal, threshold, sr, window=1024):
 
 
 def spectrogram(ax, spec, frame_length, sr, window):
+    """show spectrogram
+
+    Args:
+        ax: axis
+        spec: input spectrogram
+        frame_length: Length of signal
+        sr: sampling rate
+        window: Length of window
+
+    """
+
     spec_log = 20 * np.log10(np.abs(spec).T)[window // 2:] #dB
     im = ax.imshow(spec_log, cmap='jet', extent=[0, frame_length // sr, 0, sr // 2,], aspect="auto")
     #ax.set_yscale("log", base=2)
@@ -130,7 +219,7 @@ def spectrogram(ax, spec, frame_length, sr, window):
     cbar = fig.colorbar(im, format='%+2.0f dB', cax=cax)
     cbar.set_label("Magnitude[dB]")
     ax.set_title("Spectrogram")
-
+    return
 
 if __name__ == "__main__":
     #load file
