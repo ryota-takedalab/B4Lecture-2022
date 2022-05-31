@@ -24,13 +24,22 @@ def autocorrelation(data, order=None):
        autocorrelation
     """
     len_data = len(data)
+    # print("len_data:", len_data)
     ac = np.zeros(len_data)
+    # print("order:", order)
     if order == None:
         order = len_data
+    """
     for l in range(order):
-        for i in range(len_data - 1):
-            ac[i] += data[i] * data[i+1]
-    
+        for i in range(len_data - l):
+            ac[l] += data[i] * data[i+l]
+    """
+    for i in range(len_data):
+        if i == 0:
+            ac[i] = 0
+        else:
+            ac[i] = data[0:-i] @ data[i:]
+            
     return ac
 
 
@@ -47,13 +56,15 @@ def peak(ac):
     m:int
       peak of input
     """
+    print("ac.shape[0]:", ac.shape[0])
     peak = np.zeros(ac.shape[0] - 2)
     # 前後で比較
     for i in range(ac.shape[0] - 2):
         if ac[i]<ac[i+1] and ac[i+1]>ac[i+2]:
             peak[i] = ac[i+1]
+    print("peak:", np.max(peak))
     m0 = np.argmax(peak)
-
+    # print("m0:", m0)
     return m0
 
 
@@ -70,7 +81,7 @@ def f0_ac(data, sr, F_size, overlap, S_num):
     overlap:int
             overlap size
     S_num:int
-          a number of shift
+          the number of shift
     
     return
     ---
@@ -123,7 +134,7 @@ def f0_cep(data, sr, F_size, overlap, S_num, lif):
     overlap:int
             overlap size
     S_num:int
-          a number of frame
+          the number of shift
     lif:int
         lifter index
     
@@ -159,7 +170,7 @@ def f_plot(f0_a, f0_c, data, Ts, sr):
     sr:int
        sampling rate
     """
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(8, 6))
     plt.specgram(data, Fs=sr, cmap="rainbow", scale_by_freq="True")
     xa_axis = np.arange(0, Ts, Ts/len(f0_a))
     xc_axis = np.arange(0, Ts, Ts/len(f0_c))
@@ -170,9 +181,10 @@ def f_plot(f0_a, f0_c, data, Ts, sr):
     plt.legend()
     plt.colorbar()
     plt.tight_layout()
-    path = os.path.dirname(__file__)
-    save_f0_fname = os.path.join(path, "result", args.save_f0_fname)
-    plt.savefig(save_f0_fname)
+    if args.save_f0_fname:
+        path = os.path.dirname(__file__)
+        save_f0_fname = os.path.join(path, "result", args.save_f0_fname)
+        plt.savefig(save_f0_fname)
     plt.show()
     plt.close()
 
@@ -302,7 +314,7 @@ def spe(log, cep, lpc, F_size, sr):
     sr:int
        sampling rate
     """
-    plt.figure(figsize=(10, 8))
+    plt.figure(figsize=(8, 6))
     f_axis = np.fft.fftfreq(F_size, d=1.0/sr)
     plt.plot(f_axis[:F_size//2], log[:len(log)//2], label="Spectrum", color="blue")
     plt.plot(f_axis[:F_size//2], cep[:len(log)//2], label="Cepstrum", color="green")
@@ -311,9 +323,10 @@ def spe(log, cep, lpc, F_size, sr):
     plt.ylabel("Log amplitude spectrum[dB]", fontsize=15)
     plt.legend()
     plt.tight_layout()
-    path = os.path.dirname(__file__)
-    save_spe_fname = os.path.join(path, "result", args.save_spe_fname)
-    plt.savefig(save_spe_fname)
+    if args.save_spe_fname:
+        path = os.path.dirname(__file__)
+        save_spe_fname = os.path.join(path, "result", args.save_spe_fname)
+        plt.savefig(save_spe_fname)
     plt.show()
     plt.close()
 
@@ -324,25 +337,26 @@ def main(args):
     data, sr = librosa.load(fname, sr = 16000)
 
     # 基本周波数計算
-    F_size = 1024
-    overlap = F_size // 2
-    F_num = data.shape[0]
-    Ts = float(F_num)
-    S_num = int(F_num//(F_size - overlap) - 1)
+    F_size = 1024 # frame size
+    overlap = F_size // 2 # overlap size
+    F_num = data.shape[0] # the number of frame
+    Ts = float(F_num) / sr # time of sound data
+    S_num = int(F_num//overlap - 1) # 短時間区間数
     win = np.hamming(F_size)
     lif = args.lif
 
     # 基本周波数計算&プロット
-    f0_a = f0_cep(data, sr, F_size, overlap, S_num, lif)
-    f0_c = f0_ac(data, sr, F_size, overlap, S_num)
+    f0_a = f0_ac(data, sr, F_size, overlap, S_num)
+    f0_c = f0_cep(data, sr, F_size, overlap, S_num, lif)
     f_plot(f0_a, f0_c, data, Ts, sr)
 
     # スペクトル包絡
-    p = 0.97
+    """
+    p = 0.97 # filter coefficient
     s = 2.0
     s_frame = int(s * sr)
     pe_data = preemphasis(data, p)
-    windata = pe_data[s_frame:s_frame + F_size] * win
+    windata = pe_data[s_frame : s_frame+F_size] * win
     deg = args.deg
 
     # 計算
@@ -351,7 +365,7 @@ def main(args):
     lpc = lpc_m(windata, deg, F_size)
 
     spe(log, cep, lpc, F_size, sr)
-
+    """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
