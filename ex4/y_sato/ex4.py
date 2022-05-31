@@ -44,8 +44,6 @@ def cepstrum(signal, threshold, sr, window):
     tmp = signal * win_fc
     spec = np.fft.fft(tmp)
     log_spec = 20 * np.log10(spec)
-    tmp = 10 ** (log_spec / 20)
-
 
     #ケプストラム
     cep = np.fft.fft(log_spec)
@@ -72,12 +70,15 @@ def cepstrum(signal, threshold, sr, window):
 
 
 def lpc(signal, p, sr, window=1024):
+
     ac = autocorrelation(signal, window)
     r = ac[: p + 1]  # r0 ~ rp
+
+
     a, e = levinson_durbin(r)
     w, h = scipy.signal.freqz(e, a)
     w = sr * w / 2 / np.pi
-    env = 20 * np.log10(np.abs(h))
+    env = 20 * np.log10(h)
     return w, env
 
 
@@ -196,6 +197,8 @@ if __name__ == "__main__":
     threshold = 50
     signal = original_signal[t_sample : t_sample + window]
     win_fc = np.hamming(window)
+
+    signal *= win_fc
 
     tmp = signal * win_fc
     t_original_spec = np.fft.fft(tmp)
