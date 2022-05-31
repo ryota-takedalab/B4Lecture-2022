@@ -1,5 +1,5 @@
 import myfunc
-import ceps
+import ex4func
 
 import argparse
 import numpy as np
@@ -26,10 +26,10 @@ def main():
     time = float(data_size / samplerate)
 
     # calculate fundamental frequency (f0) by autocorrelation
-    f0_ac = ceps.calc_ac(data, shift_size, samplerate)
+    f0_ac = ex4func.calc_ac(data, shift_size, samplerate)
     print('f0_ac', f0_ac)
     # calculate fundamental frequency (f0) by cepstrum
-    f0_cep = ceps.calc_cep(data, shift_size, samplerate)
+    f0_cep = ex4func.calc_cep(data, shift_size, samplerate)
     print('f0_cep', f0_cep)
     
     # plot f0 with spectrogram
@@ -42,7 +42,7 @@ def main():
     plt.plot(np.arange(0, time, time / len(f0_cep)), f0_cep, color = 'b', label='Cepstrum', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    # plt.savefig('f0_piano.png')
+    # plt.savefig('f0.png')
     plt.show()
     plt.close()
 
@@ -55,13 +55,13 @@ def main():
     fscale = np.fft.fftfreq(shift_size, d=1.0/samplerate)   # frequency scale
 
     # calculate spectral envelope by cepstrum
-    cep = ceps.cepstrum(win_data)  # fft, log, fft
+    cep = ex4func.cepstrum(win_data)  # fft, log, fft
     cep_lifter = np.array(cep)  # lifter
     cep_lifter[f_lifter: len(cep_lifter) - f_lifter + 1] = 0
     env_ceps = 20 * np.fft.fft(cep_lifter, shift_size).real
 
     # calculate spectral envelope by LPC
-    env_lpc = ceps.lpc(win_data, 32, shift_size)
+    env_lpc = ex4func.lpc(win_data, 32, shift_size)
     # plot spectral envelope
     plt.figure(figsize=(10,7))
     plt.title('Spectral Envelope')
@@ -72,7 +72,7 @@ def main():
     plt.plot(fscale[: shift_size//2], env_lpc[:len(env_lpc)//2], color = 'purple', label = 'LPC', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    # plt.savefig('spectral_piano.png')
+    # plt.savefig('spectral.png')
     plt.show()
     plt.close()
 

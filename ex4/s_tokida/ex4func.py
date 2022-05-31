@@ -2,7 +2,6 @@ import numpy as np
 from scipy import signal
 from matplotlib import pyplot as plt
 
-
 def autocorrelation(data):
     """define auto correlation
 
@@ -29,8 +28,9 @@ def calc_ac(data, shift_size, samplerate):
      Returns:
          f0 (ndarray): F0 list
      """
+
     overlap = shift_size//2
-    # 窓を適用する回数
+    # times to shift
     shift = int((data.shape[0] - overlap) / overlap)
     f0 = np.zeros(shift)
     win = np.hamming(shift_size)
@@ -61,7 +61,7 @@ def cepstrum(data):
 
     fft_data =np.fft.fft(data)
     power_spec = np.log10(np.abs(fft_data))
-    #cep = np.real(np.fft.fft(power_spec))
+    # cep = np.real(np.fft.fft(power_spec))
     cep = np.real(np.fft.ifft(power_spec))  # why ifft?
     return cep
 
@@ -77,6 +77,7 @@ def calc_cep(data, shift_size, samplerate):
      Returns:
          f0 (ndarray): F0 list
      """
+
     overlap = shift_size//2
     shift = int((data.shape[0] - overlap)/overlap)
     # print('shift', shift)  # 134
@@ -85,7 +86,7 @@ def calc_cep(data, shift_size, samplerate):
 
     for t in range(shift):
         shift_data = data[int(t*overlap):int(t*overlap+shift_size)] * win
-        #shift_data = data[int(t*overlap):int(t*overlap+shift_size)] 
+        # shift_data = data[int(t*overlap):int(t*overlap+shift_size)] 
         # auto correlation
         cep = cepstrum(shift_data)
         # peak
@@ -106,6 +107,7 @@ def detect_peak(r):
      Returns:
          m0 (ndarray): peak lists
      """
+
     peak=np.zeros(r.shape[0]-2)
     for i in range(r.shape[0]-2):
         if r[i]<r[i+1] and r[i+1]>r[i+2]:
@@ -131,14 +133,13 @@ def levinson_durbin(r, order):
     k[0] = a[1]
     e = r[0] + r[1] * a[1]
     for q in range(1, order):
-        k[q] = -np.sum(a[:q+1] * r[q+1:0:-1]) / e  # kの定義
-        U = a[0:q+2]  # aの一番下に0を追加したベクトル
-        V = U[::-1]  # Uの上下を逆にした行列
+        k[q] = -np.sum(a[:q+1] * r[q+1:0:-1]) / e  # define k
+        U = a[0:q+2]  # append 0 under a
+        V = U[::-1]  # turn U upside down
         a[0:q+2] = U + k[q] * V  # A(p+1) = U(p+1) + k(p)*V(p+1)
         e *= 1-k[q] * k[q]  # E(p+1) = E(p)(1-k(p)^2)
 
     return a, e
-
 
 def lpc(data, order, shift_size):
     """LPC algorithm
@@ -151,10 +152,11 @@ def lpc(data, order, shift_size):
      Returns:
          env_lpc (ndarray): envelope
      """
+     
     r = autocorrelation(data)
     a, e = levinson_durbin(r[:len(r) // 2], order)
     # print('a',a)
 
-    h = signal.freqz(np.sqrt(e), a, shift_size, 'whole')[1]  # 指数変換
+    h = signal.freqz(np.sqrt(e), a, shift_size, 'whole')[1]  # Exponential transformation
     env_lpc = 20*np.log10(np.abs(h))
     return env_lpc
