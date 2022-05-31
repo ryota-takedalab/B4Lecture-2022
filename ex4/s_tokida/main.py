@@ -4,12 +4,13 @@ import ex4func
 import argparse
 import numpy as np
 import librosa
+import librosa.display
 from matplotlib import pyplot as plt
 
 def main():
     parser = argparse.ArgumentParser()
 
-    # parser.add_argumentで受け取る引数を追加
+    # parser.add_argument
     parser.add_argument('filepath', type=str, help='wav file name : ex4.wav')
     parser.add_argument('--shift_size', type=int, default=1024, help='shift size')
     parser.add_argument('--lifter', type=int, default=20, help='cut off freqency by lifter')
@@ -27,22 +28,21 @@ def main():
 
     # calculate fundamental frequency (f0) by autocorrelation
     f0_ac = ex4func.calc_ac(data, shift_size, samplerate)
-    print('f0_ac', f0_ac)
     # calculate fundamental frequency (f0) by cepstrum
     f0_cep = ex4func.calc_cep(data, shift_size, samplerate)
-    print('f0_cep', f0_cep)
     
     # plot f0 with spectrogram
-    plt.figure(figsize=(10,7))
+    plt.figure(figsize=(8,6))
     plt.title('Fundamental Frequency')
     plt.xlabel('Time[s]')
     plt.ylabel('Frequency[Hz]')
+
     myfunc.myspectrogram(data, shift_size, data_size, overlap, samplerate, 'Spectrogram', 'rainbow')
     plt.plot(np.arange(0, time, time / len(f0_ac)), f0_ac, color = 'deeppink', label='AutoCorrelation', linewidth = 2.0)
     plt.plot(np.arange(0, time, time / len(f0_cep)), f0_cep, color = 'b', label='Cepstrum', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    # plt.savefig('f0.png')
+    plt.savefig('f0_test.png')
     plt.show()
     plt.close()
 
@@ -62,8 +62,9 @@ def main():
 
     # calculate spectral envelope by LPC
     env_lpc = ex4func.lpc(win_data, 32, shift_size)
+    
     # plot spectral envelope
-    plt.figure(figsize=(10,7))
+    plt.figure(figsize=(8,6))
     plt.title('Spectral Envelope')
     plt.xlabel('Frequency[Hz]')
     plt.ylabel('Log amplitude spectrum [dB]')
@@ -72,7 +73,7 @@ def main():
     plt.plot(fscale[: shift_size//2], env_lpc[:len(env_lpc)//2], color = 'purple', label = 'LPC', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    # plt.savefig('spectral.png')
+    plt.savefig('spectral_test.png')
     plt.show()
     plt.close()
 

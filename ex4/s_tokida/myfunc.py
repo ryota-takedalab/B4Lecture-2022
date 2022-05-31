@@ -41,6 +41,8 @@ def myspectrogram(data, shift_size, data_size, overlap, samplerate, title_name, 
      
     spec = stft(data, shift_size, data_size, overlap)
     spec_log = 20*np.log10(np.abs(spec))
+    # plt.imshow(spec_log[:, :shift_size//2].T, aspect='auto', origin = 'lower', cmap = cmap)
     plt.imshow(spec_log[:, :shift_size//2].T, extent=[0, float(data_size)/samplerate, 0, samplerate],
-               aspect='auto', origin = 'lower', cmap = cmap)
+               aspect='auto', origin = 'lower', cmap = cmap)  # extent 表示する場所を明示
     plt.colorbar()
+    plt.title(title_name)

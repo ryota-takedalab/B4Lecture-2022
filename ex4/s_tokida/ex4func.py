@@ -29,17 +29,16 @@ def calc_ac(data, shift_size, samplerate):
          f0 (ndarray): F0 list
      """
 
-    overlap = shift_size//2
+    overlap = shift_size//4
     # times to shift
-    shift = int((data.shape[0] - overlap) / overlap)
+    shift = int((data.shape[0] - overlap) // overlap)
     f0 = np.zeros(shift)
     win = np.hamming(shift_size)
 
-    for t in range(shift):
-        shift_data = data[t*overlap : t*overlap + shift_size]
+    for t in range(shift-2):
+        shift_data = data[t*overlap : t*overlap + shift_size] * win
         # auto correlation
         r = autocorrelation(shift_data)
-        # plt.plot(np.arange(r.shape[0]),r)
         # peak
         m0 = detect_peak(r)
         if m0 == 0:
@@ -61,10 +60,8 @@ def cepstrum(data):
 
     fft_data =np.fft.fft(data)
     power_spec = np.log10(np.abs(fft_data))
-    # cep = np.real(np.fft.fft(power_spec))
-    cep = np.real(np.fft.ifft(power_spec))  # why ifft?
+    cep = np.real(np.fft.ifft(power_spec)).real
     return cep
-
 
 def calc_cep(data, shift_size, samplerate):
     """get F0 by cepstrum
@@ -80,13 +77,11 @@ def calc_cep(data, shift_size, samplerate):
 
     overlap = shift_size//2
     shift = int((data.shape[0] - overlap)/overlap)
-    # print('shift', shift)  # 134
     f0 = np.zeros(shift)
     win = np.hamming(shift_size)
 
     for t in range(shift):
         shift_data = data[int(t*overlap):int(t*overlap+shift_size)] * win
-        # shift_data = data[int(t*overlap):int(t*overlap+shift_size)] 
         # auto correlation
         cep = cepstrum(shift_data)
         # peak
@@ -95,7 +90,7 @@ def calc_cep(data, shift_size, samplerate):
             f0[t] = 0
         else:
             f0[t] = samplerate / m0
-
+            
     return f0
 
 def detect_peak(r):
@@ -155,7 +150,6 @@ def lpc(data, order, shift_size):
      
     r = autocorrelation(data)
     a, e = levinson_durbin(r[:len(r) // 2], order)
-    # print('a',a)
 
     h = signal.freqz(np.sqrt(e), a, shift_size, 'whole')[1]  # Exponential transformation
     env_lpc = 20*np.log10(np.abs(h))
