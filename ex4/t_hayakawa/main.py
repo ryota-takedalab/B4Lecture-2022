@@ -3,6 +3,7 @@ import librosa
 import librosa.display
 from matplotlib import pyplot as plt
 import argparse
+from scipy.linalg import solve_toeplitz
 
 import pyworld as pw
 
@@ -35,40 +36,40 @@ def stft(data, window=1024, step=512):
     return spec
 
 
-def get_cut_signal(input, win_size, shift_size):
+def get_cut_signal(signal, win_size, shift_size):
     """cut input signal
 
     Args:
-        input (ndarray): input signal
+        signal (ndarray): input signal
         win_size (int): window size
         shift_size (int): shift length
 
     Returns:
         ndarray: framed signal
     """
-    length = input.shape[0]
+    length = signal.shape[0]
     frame_num = (length-win_size)//shift_size+1
-    frames = np.zeros((frame_num, win_size)+input.shape[1:])
+    frames = np.zeros((frame_num, win_size)+signal.shape[1:])
 
     for i in range(frame_num):
         # start position to cut signal
         start = shift_size*i
-        frames[i] = input[start:start+win_size]
+        frames[i] = signal[start:start+win_size]
 
     return frames
 
 
-def auto_correlation(input, win_size):
+def auto_correlation(signal, win_size):
     """auto correlation
 
     Args:
-        input (ndarray): input signal
+        signal (ndarray): input signal
         win_size (int): window size
 
     Returns:
         ndarray: auto correlation signal
     """
-    frames = get_cut_signal(input, win_size, win_size//2)
+    frames = get_cut_signal(signal, win_size, win_size//2)
     spec = np.fft.rfft(frames, win_size * 2)
     power = spec * spec.conj()
     ac = np.fft.irfft(power)
@@ -79,18 +80,18 @@ def auto_correlation(input, win_size):
     return ac
 
 
-def detect_peak(input, neighbor):
+def detect_peak(signal, neighbor):
     """detect peak from input signal
 
     Args:
-        input (ndarray): input signal
+        signal (ndarray): input signal
         neighbor (int): detect range
 
     Returns:
         ndarray: peaks list
     """
-    frames = get_cut_signal(input, 2*neighbor+1, 1)
-    candidate = np.copy(input[neighbor:-neighbor])
+    frames = get_cut_signal(signal, 2*neighbor+1, 1)
+    candidate = np.copy(signal[neighbor:-neighbor])
 
     candidate[np.argmax(frames, axis=1) != neighbor] = -np.inf
     # calculate maximum of peak
@@ -158,7 +159,7 @@ def levinson(r):
     sigma = r[0]
     for p in range(1, a.shape[0]):
         w = np.sum(a[:p]*r[p:0:-1], axis=0)
-        k = w/sigma
+        k = w/(sigma+1e-8)
         sigma = sigma-k*w
 
         a[1:p+1] = a[1:p+1]-k*a[p-1::-1]
@@ -175,6 +176,7 @@ def lpc(signal, win_size, deg):
         signal (ndarray): input signal
         win_size (int): window size
         deg (int): degree
+        method(str): solve Yule-walker equation Method
 
     Returns:
         ndarray: envelope
@@ -182,7 +184,7 @@ def lpc(signal, win_size, deg):
     ac = auto_correlation(signal, win_size)
     r = ac[:deg]
 
-    a,e=levinson(r)
+    a, e = levinson(r)
 
     env = e/np.fft.rfft(a, win_size, axis=0)
     env = librosa.amplitude_to_db(np.abs(env))
@@ -194,7 +196,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", type=str, help="Wave file name")
     parser.add_argument(
-        "--f0", choices=["ac", "ceps"], default="ac", help="method for calculate f0")
+        "--f0",
+        choices=["ac", "ceps"],
+        default="ac",
+        help="method for calculate f0")
     args = parser.parse_args()
 
     # load sound file
@@ -213,8 +218,8 @@ def main():
     # _f0,_time=pw.dio(data,sr)
     # f0=pw.stonemask(data,_f0,_time,sr)
 
-    librosa.display.specshow(spec_db, sr=sr, hop_length=win_size //
-                             2, x_axis="time", y_axis="linear", cmap="rainbow")
+    librosa.display.specshow(spec_db, sr=sr, hop_length=win_size // 2,
+                             x_axis="time", y_axis="linear", cmap="rainbow")
     t = np.linspace(0, (data.size-win_size)/sr, f0.size)
     plt.plot(t, f0, color="black")
     plt.ylim(0, 1000)
