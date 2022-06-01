@@ -29,7 +29,7 @@ def autocorrelation(data, order=None):
     # print("order:", order)
     if order == None:
         order = len_data
-    """
+    
     for l in range(order):
         for i in range(len_data - l):
             ac[l] += data[i] * data[i+l]
@@ -39,7 +39,7 @@ def autocorrelation(data, order=None):
             ac[i] = 0
         else:
             ac[i] = data[0:-i] @ data[i:]
-            
+    """
     return ac
 
 
@@ -56,13 +56,13 @@ def peak(ac):
     m:int
       peak of input
     """
-    print("ac.shape[0]:", ac.shape[0])
+    # print("ac.shape[0]:", ac.shape[0])
     peak = np.zeros(ac.shape[0] - 2)
     # 前後で比較
     for i in range(ac.shape[0] - 2):
         if ac[i]<ac[i+1] and ac[i+1]>ac[i+2]:
             peak[i] = ac[i+1]
-    print("peak:", np.max(peak))
+    # print("peak:", np.max(peak))
     m0 = np.argmax(peak)
     # print("m0:", m0)
     return m0
@@ -237,7 +237,7 @@ def LevinsonDurbin(r, deg):
         lam = 0.0
         for j in range(k + 1):
             lam -= a[j] * r[k + 1 - j]
-            lam /= e[k]
+        lam /= e[k]
 
         U = [1]
         U.extend([a[i] for i in range(1, k + 1)])
@@ -249,7 +249,7 @@ def LevinsonDurbin(r, deg):
 
         a = np.array(U) + lam * np.array(V)
 
-        e[k + 1] = e[k] * (1.0 - lam**2)
+        e[k + 1] = e[k] * (1.0 - lam*lam)
 
     return a, e[-1]
 
@@ -351,9 +351,8 @@ def main(args):
     f_plot(f0_a, f0_c, data, Ts, sr)
 
     # スペクトル包絡
-    """
     p = 0.97 # filter coefficient
-    s = 2.0
+    s = 1.0
     s_frame = int(s * sr)
     pe_data = preemphasis(data, p)
     windata = pe_data[s_frame : s_frame+F_size] * win
@@ -365,7 +364,6 @@ def main(args):
     lpc = lpc_m(windata, deg, F_size)
 
     spe(log, cep, lpc, F_size, sr)
-    """
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
