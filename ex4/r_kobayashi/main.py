@@ -2,6 +2,7 @@ import argparse
 import os
 
 import librosa
+import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ssig
@@ -154,15 +155,46 @@ def f0_cep(data, sr, F_size, overlap, S_num, lif):
     
     return f0
 
+
+def stft(wav,F_size):
+    """
+    parameters
+    ---
+    wav:int
+        wav data
+    F_size:int
+           frame size
+    
+    return
+    ---
+    spec:np.ndarray
+         spectrogram
+    """
+    overlap = int(F_size // 2)
+    window = np.hamming(F_size)
+
+    # スペクトログラムの配列生成
+    spec = np.empty((len(wav) // overlap -1, F_size))
+    
+    # stft
+    for i in range(0, spec.shape[0] - 1):
+        x = wav[i * overlap : i * overlap + F_size]
+        x = window * x 
+        spec[i] = np.fft.fft(x)
+    spec = np.array(spec).T
+
+    return spec
+
+
 # 基本周波数のプロット
-def f_plot(f0_a, f0_c, data, Ts, sr):
+def f_plot(spec, f0_a, f0_c, Ts, sr, F_size):
     """ 
     parameters
     ---
+    spec:np.ndarray
+         spectrogram
     f0_a and f0_c:np.ndarray
                   fundamental frequency
-    data:numpy.ndarray
-         audio time series
     sr:int
        sampling rate
     Ts:float
@@ -171,7 +203,16 @@ def f_plot(f0_a, f0_c, data, Ts, sr):
        sampling rate
     """
     plt.figure(figsize=(8, 6))
-    plt.specgram(data, Fs=sr, cmap="rainbow", scale_by_freq="True")
+    img = librosa.display.specshow(
+        spec,
+        sr=sr,
+        hop_length= int(F_size//2),
+        x_axis="time",
+        y_axis="log",
+        cmap="rainbow",
+    )
+    plt.colorbar(img, aspect = 10, pad = 0.05, extend = "both", format = "%+2.f dB")
+    # plt.specgram(db, Fs=sr, cmap="rainbow", scale_by_freq="True")
     xa_axis = np.arange(0, Ts, Ts/len(f0_a))
     xc_axis = np.arange(0, Ts, Ts/len(f0_c))
     plt.plot(xa_axis, f0_a, label="Autocorrelation", color="blue")
@@ -179,7 +220,7 @@ def f_plot(f0_a, f0_c, data, Ts, sr):
     plt.xlabel("times[s]", fontsize=15)
     plt.ylabel("Frequency[Hz]", fontsize=15)
     plt.legend()
-    plt.colorbar()
+    # plt.colorbar()
     plt.tight_layout()
     if args.save_f0_fname:
         path = os.path.dirname(__file__)
@@ -346,9 +387,11 @@ def main(args):
     lif = args.lif
 
     # 基本周波数計算&プロット
+    spec = stft(data, F_size=F_size)
+    db = librosa.amplitude_to_db(np.abs(spec))
     f0_a = f0_ac(data, sr, F_size, overlap, S_num)
     f0_c = f0_cep(data, sr, F_size, overlap, S_num, lif)
-    f_plot(f0_a, f0_c, data, Ts, sr)
+    f_plot(db, f0_a, f0_c, Ts, sr, F_size)
 
     # スペクトル包絡
     p = 0.97 # filter coefficient
