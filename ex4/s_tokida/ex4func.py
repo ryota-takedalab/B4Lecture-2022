@@ -15,10 +15,10 @@ def autocorrelation(data):
     r = np.zeros(len(data))
     for m in range (data.shape[0]):
         r[m] = (data[:data.shape[0]-m]*data[m:data.shape[0]]).sum()
-        
+
     return r
 
-def calc_ac(data, shift_size, samplerate):
+def calc_f0_by_ac(data, shift_size, samplerate):
     """get F0 by autocorrelation
 
      Args:
@@ -65,7 +65,7 @@ def cepstrum(data):
 
     return cep
 
-def calc_cep(data, shift_size, samplerate, f_lifter):
+def calc_f0_by_cep(data, shift_size, samplerate, f_lifter):
     """get F0 by cepstrum
 
      Args:
@@ -111,6 +111,8 @@ def detect_peak(r):
         if r[i]<r[i+1] and r[i+1]>r[i+2]:
             peak[i] = r[i+1]
     m0 = np.argmax(peak)
+    if peak[m0] < 0.13:
+        m0 = 0
 
     return m0
 

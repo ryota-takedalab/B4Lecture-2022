@@ -27,9 +27,9 @@ def main():
     time = float(data_size / samplerate)
 
     # calculate fundamental frequency (f0) by autocorrelation
-    f0_ac = ex4func.calc_ac(data, shift_size, samplerate)
+    f0_ac = ex4func.calc_f0_by_ac(data, shift_size, samplerate)
     # calculate fundamental frequency (f0) by cepstrum
-    f0_cep = ex4func.calc_cep(data, shift_size, samplerate, f_lifter)
+    f0_cep = ex4func.calc_f0_by_cep(data, shift_size, samplerate, f_lifter)
 
     # spectrogram by librosa.stft()
     plt.figure()
