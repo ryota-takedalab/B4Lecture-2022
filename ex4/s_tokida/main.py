@@ -44,7 +44,7 @@ def main():
     plt.plot(np.arange(0, time, time / len(f0_cep)), f0_cep, color = 'b', label='Cepstrum', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('f0_librosa_voice.png')
+    # plt.savefig('f0_librosa.png')
     plt.show()
     plt.close()
 
@@ -59,7 +59,7 @@ def main():
     plt.plot(np.arange(0, time, time / len(f0_cep)), f0_cep, color = 'b', label='Cepstrum', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('f0_voice.png')
+    # plt.savefig('f0_voice.png')
     plt.show()
     plt.close()
 
@@ -90,7 +90,7 @@ def main():
     plt.plot(fscale[: shift_size//2], env_lpc[:len(env_lpc)//2], color = 'purple', label = 'LPC', linewidth = 2.0)
     plt.legend()
     plt.tight_layout()
-    plt.savefig('spectral_voice.png')
+    # plt.savefig('spectral_voice.png')
     plt.show()
     plt.close()
 
