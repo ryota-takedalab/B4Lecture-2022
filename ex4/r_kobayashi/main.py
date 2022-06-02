@@ -25,12 +25,9 @@ def autocorrelation(data, order=None):
        autocorrelation
     """
     len_data = len(data)
-    # print("len_data:", len_data)
     ac = np.zeros(len_data)
-    # print("order:", order)
     if order == None:
         order = len_data
-    
     for l in range(order):
         for i in range(len_data - l):
             ac[l] += data[i] * data[i+l]
@@ -57,15 +54,12 @@ def peak(ac):
     m:int
       peak of input
     """
-    # print("ac.shape[0]:", ac.shape[0])
     peak = np.zeros(ac.shape[0] - 2)
     # 前後で比較
     for i in range(ac.shape[0] - 2):
         if ac[i]<ac[i+1] and ac[i+1]>ac[i+2]:
             peak[i] = ac[i+1]
-    # print("peak:", np.max(peak))
     m0 = np.argmax(peak)
-    # print("m0:", m0)
     return m0
 
 
