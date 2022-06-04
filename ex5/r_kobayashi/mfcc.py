@@ -15,20 +15,6 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-#ファイル読み込み
-def read_csv(f_name):
-    """
-    return
-    ---
-    data:numpy.ndarray
-        csv data
-    """
-    path = os.path.dirname(__file__)
-    f_name = os.path.join(path, f_name)
-    df = pd.read_csv(f_name)
-    data = df.values
-    return data
-
 #係数(1.0, -p)のFIRフィルタを作成
 def preemphasis(data,p):
     """
@@ -194,11 +180,9 @@ def png(mfcc, d, dd, Ts):
 
 def main(args):
     #ファイル読込
-    """ path = os.path.dirname(__file__)
+    path = os.path.dirname(__file__)
     f_name = os.path.join(path, args.fname)
-    data, sr = librosa.load(f_name, sr=16000) """
-
-    data = read_csv(args.fname)
+    data, sr = librosa.load(f_name, sr=16000)
 
     # 条件設定
     F_size = args.F_size
