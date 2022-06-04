@@ -5,7 +5,7 @@ from io import BytesIO
 from PIL import Image
 
 
-def k_means(X, k, max_iter=300):
+def k_means(X, k, max_iter=500):
     """k-means algorithm
 
     Args:
@@ -60,7 +60,7 @@ def render_frame(fig, ax, angle):
     """
     ax.view_init(30, angle)
     plt.close()
-    # PIL Image に変換
+    # convert into a PIL Image
     buf = BytesIO()
     fig.savefig(buf, bbox_inches='tight', pad_inches=0.0)
     return Image.open(buf)
@@ -105,7 +105,7 @@ def main():
     fig2.savefig("data2_k=%i.png" % k)
 
     # apply k-means algorithm to data3
-    k = 3
+    k = 4
     clusters, centroids = k_means(data3_array, k)
     data3["class"] = clusters
     fig3 = plt.figure()
