@@ -20,7 +20,25 @@ def init_random(data, num_c):
 
     return centroid
 
-def k_means(data, num_c):
+def k_means_plusplus(data, num_c):
+    """define initial centroids by kmeans++ algorithm
+    Args:
+        data (ndarray): imput data
+        num_c (int): number of clusters
+    Returns:
+        centroid (ndarray)
+    """
+    
+    centroid=np.zeros(data.shape[1] * num_c).reshape(num_c, data.shape[1])
+    p = np.repeat(1/data.shape[0], data.shape[0])  # 最初の確率は全て同じ
+    
+    for k in range(num_c):  # 中心の数がクラスタ数となるまで
+        centroid[k, :] = data[np.random.choice(range(data.shape[0]), 1, p=p)]  # 1つ目の中心
+        p = ((data - centroid[k, :])**2).sum(axis = 1) / ((data - centroid[k, :])**2).sum()  # 1つ目の中心からの距離によって確立作成
+    
+    return centroid
+
+def k_means(data, num_c, centroid):
     """clustering by kmeans method
     Args:
         data (ndarray): imput data
@@ -30,17 +48,15 @@ def k_means(data, num_c):
         centroid (ndarray) 
     """
 
-    centroid = init_random(data, num_c)  # randomでcentroidの初期値設定
     distance = np.zeros((num_c, data.shape[0]))
     cluster = np.zeros(data.shape[0])
 
     count = 0
-    max_iter = 1000
+    max_iter = 100
     
     while(count < max_iter): #各データポイントが属しているclusterが変化しなくなった、または一定回数max_iterの繰り返しを越した時
-        #centroid = centroid.copy()
+
         distance = np.array([np.sum((centroid[i] - data) ** 2, axis = 1) for i in range(num_c)])
-        #cluster_bef = cluster
         cluster = np.argmin(distance, axis = 0)  #各列ごとの最大値の行番号
         
         centroid_bef = centroid
@@ -50,9 +66,9 @@ def k_means(data, num_c):
             print('count:', count)
             break
     
-    return cluster, centroid
+    return cluster
 
-def render_frame(df, angle, filename):
+def render_frame(df, centroid, cluster, colors, angle, filename):
     """define render frame to make gif
     Args:
         df (ndarray): imput data
@@ -64,7 +80,8 @@ def render_frame(df, angle, filename):
 
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(df[:, 0], df[:, 1], df[:, 2], c='blueviolet', label='Observed data')
+    ax.scatter(df[:, 0], df[:, 1], df[:, 2], c = [colors[i] for i in cluster], label='Observed data')
+    ax.scatter(centroid[:, 0], centroid[:, 1], centroid[:, 2], c='k', marker = '*', s = 100, label='Centroid')
     ax.view_init(30, angle)
     plt.close()
 
@@ -80,6 +97,7 @@ def main():
 
     parser.add_argument('filepath', type=str, help='csv file name')
     parser.add_argument('c', type=int, help='number of clusters')
+    parser.add_argument('--init', type=str, default='random', help='algorithm to define initial centroids[random, kmeans++]')
     args = parser.parse_args()
 
     filepath = args.filepath
@@ -88,16 +106,23 @@ def main():
 
     df = pd.read_csv(filepath).values
 
-    cluster, centroid = k_means(df, num_c)
+    if args.init == 'random':
+        centroid = init_random(df, num_c)
+    elif args.init == 'kmeans++':
+        centroid = k_means_plusplus(df, num_c)
+
+    cluster = k_means(df, num_c, centroid)
     colors = ['y', 'm', 'c', 'r', 'g', 'b']
 
     if df.shape[1] == 2:
 
         fig, ax = plt.subplots(figsize=(7,6))
-        ax.set(xlabel="$x_1$", ylabel="$x_2$", title=f'{filename}  c={num_c}')
+        ax.set(xlabel="$x_1$", ylabel="$x_2$", title=f'{filename}  c={num_c}  {args.init}')
         ax.scatter(df[:, 0], df[:, 1], c = [colors[i] for i in cluster], label = 'Observed')
-        ax.scatter(centroid[:, 0], centroid[:, 1], c='k', label='Centroid')
+        ax.scatter(centroid[:, 0], centroid[:, 1], c='k', marker = '*', s = 100, label='Centroid')
 
+        plt.legend()
+        plt.tight_layout()
         # plt.savefig('fig/' + f'{filename}_{num_c}.png')
         plt.show()
         plt.close()
@@ -106,15 +131,18 @@ def main():
 
         fig = plt.figure(figsize=(7,6))
         ax = fig.add_subplot(111, projection='3d')
-        ax.set(xlabel="$x_1$", ylabel="$x_2$", zlabel="$x_3$", title=f'{filename}  c={num_c}')
+        ax.set(xlabel="$x_1$", ylabel="$x_2$", zlabel="$x_3$", title=f'{filename}  c={num_c}  {args.init}')
         ax.scatter(df[:, 0], df[:, 1], df[:, 2], c = [colors[i] for i in cluster], label='Observed data')
-        ax.scatter(centroid[:, 0], centroid[:, 1], centroid[:, 2], c='k', marker = '*',label='Centroid')
+        ax.scatter(centroid[:, 0], centroid[:, 1], centroid[:, 2], c='k', marker = '*', s = 100, label='Centroid')
+        
+        plt.legend()
+        plt.tight_layout()
         # plt.savefig('fig/' + f'{filename}_{num_c}.png')
         plt.show()
         plt.close()
 
         # gif image
-        # images = [render_frame(df, angle*2, filename) for angle in range(90)]
+        # images = [render_frame(df, centroid, cluster, colors, angle*2, filename) for angle in range(90)]
         # images[0].save('fig/' + f'{filename}_{num_c}.gif', save_all=True, append_images=images[1:], duration=100, loop=0)
 
 if __name__ == "__main__":
