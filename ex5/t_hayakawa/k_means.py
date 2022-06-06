@@ -5,11 +5,10 @@ import matplotlib.pyplot as plt
 
 
 class KMeans:
-    def __init__(self, n_clusters, filename, max_iter=1000, random_seed=0) -> None:
+    def __init__(self, n_clusters, filename, max_iter=1000) -> None:
         self.n_clusters = n_clusters
         self.filename = filename
         self.max_iter = max_iter
-        self.random_state = np.random.RandomState(random_seed)
 
     def fit(self, x):
         # ランダムに最初のクラスタ点を決定
