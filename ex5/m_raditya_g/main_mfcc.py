@@ -47,7 +47,6 @@ def main():
     time = audio.size / samplerate
     max_time = time + (time / dct.shape[0])
     extent = [0, max_time, 0, dim]
-    aspect = 4 * max_time / (dim * 10)
     delta = mfcc.del_mfcc(dct)
     delta_delta = mfcc.del_mfcc(delta)
     # plot spectrogram
@@ -63,15 +62,15 @@ def main():
 
     ax2.set(xlabel="Time [sec]", ylabel='MFCC', title='MFCC')
     im2 = ax2.imshow(dct.T, extent=extent, aspect='auto', origin='lower', cmap='jet')
-    cbar = fig.colorbar(im2, ax=ax2)
+    fig.colorbar(im2, ax=ax2)
 
     ax3.set(xlabel="Time [sec]", ylabel='MFCC', title='ΔMFCC')
     im3 = ax3.imshow(delta.T, extent=extent, aspect='auto', origin='lower', cmap='jet')
-    cbar = fig.colorbar(im3, ax=ax3)
+    fig.colorbar(im3, ax=ax3)
 
     ax4.set(xlabel="Time [sec]", ylabel='MFCC', title='ΔΔMFCC')
     im4 = ax4.imshow(delta_delta.T, extent=extent, aspect='auto', origin='lower', cmap='jet')
-    cbar = fig.colorbar(im4, ax=ax4)
+    fig.colorbar(im4, ax=ax4)
     plt.savefig('spectrogram.png')
     plt.show()
 

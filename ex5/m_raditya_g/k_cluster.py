@@ -60,7 +60,7 @@ class Kmeans:
         centroids = np.array([np.mean(self.data, axis=0)])
         delta = np.full(self.data.shape[1], 0.01)
         cluster = []
-        n=0
+        n = 0
         while len(centroids) < self.n_clusters:
             # calculate the centroids of clusters
             centroids = np.append(centroids - delta, centroids + delta, axis=0)
@@ -77,7 +77,6 @@ class Kmeans:
         :return: centroids (np.ndarray): Array of Centroids Location
         """
         # K-means
-        centroids1 = centroids.copy()
         cluster = []
         temp = centroids.copy()
         temp[0, 0] += 1

@@ -24,7 +24,7 @@ def main():
     if len(data.columns) == 2:
         kmeans = Kmeans(data=np.array([data["x"], data["y"]]).T, init=args.kmeans_mode,
                         n_clusters=args.cluster_number, max_iter=args.max_iteration, random_state=10)
-        cluster, centroids, n= kmeans.cluster()
+        cluster, centroids, n = kmeans.cluster()
         ax = fig.add_subplot()
         for cl in cluster:
             ax.scatter(cl[:, 0], cl[:, 1])
