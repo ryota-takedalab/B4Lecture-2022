@@ -24,10 +24,10 @@ def hz2mel(f):
     """convert Hz to mel
 
     Args:
-        f (_type_): _description_
+        f (np.ndarray): input data (Hz)
 
     Returns:
-        _type_: _description_
+        np.ndarray: output data (mel)
     """
     return 2595 * np.log(f / 700.0 + 1.0)
 
@@ -36,33 +36,33 @@ def mel2hz(m):
     """convert mel to hz
 
     Args:
-        m (_type_): _description_
+        m (np.ndarray): input data (mel)
 
     Returns:
-        _type_: _description_
+        np.ndarray: output data (Hz)
     """
     return 700 * (np.exp(m / 2595) - 1.0)
 
 
-def melFilterBank(fs, N, numChannels):
+def melFilterBank(sr, N, numChannels):
     """Create mel-filter bank
 
     Args:
-        fs (_type_): _description_
-        N (_type_): _description_
-        numChannels (_type_): _description_
+        sr (int): sampling rate
+        N (int): window size
+        numChannels (int): number of channels in mel-filter bank
 
     Returns:
-        _type_: _description_
+        np.ndarray: mel-filter bank
     """
     # nyquist frequency（Hz）
-    fmax = fs / 2
+    fmax = sr / 2
     # nyquist frequency（mel）
     melmax = hz2mel(fmax)
     # maximum number of frequency indexes
     nmax = N // 2
     # frequency resolution (Hz width per frequency index 1)
-    df = fs / N
+    df = sr / N
     # find the center frequency of each filter in the Mel scale
     dmel = melmax / (numChannels + 1)
     melcenters = np.arange(1, numChannels + 1) * dmel
@@ -85,18 +85,30 @@ def melFilterBank(fs, N, numChannels):
         for i in range(int(indexcenter[c]), int(indexstop[c])):
             filterbank[c, i] = 1.0 - ((i - indexcenter[c]) * decrement)
 
-    return filterbank, fcenters
+    return filterbank
 
 
-def calc_mfcc(x, sr, win_length=1024, hop_length=512, mfcc_dim=12):
-    # Number of row in array y
+def get_mfcc(x, sr, win_length=1024, hop_length=512, mfcc_dim=12):
+    """get mfcc
+
+    Args:
+        x (np.ndarray): input data
+        sr (int): sampling rate
+        win_length (int, optional): window size. Defaults to 1024.
+        hop_length (int, optional): hop length. Defaults to 512.
+        mfcc_dim (int, optional): dimension number of mfcc. Defaults to 12.
+
+    Returns:
+        np.ndarray: mfcc
+    """
+    # Number of row in array x
     xnum = x.shape[0]
     # prepare a hamming window
     window = np.hamming(win_length)
 
     mfcc = []
     for i in range(int((xnum - hop_length) / hop_length)):
-        # extract the part of array y to which the FFT is applied
+        # extract the part of array x to calcurate mfcc
         tmp = x[i * hop_length: i * hop_length + win_length]
         # multiplied by window function
         tmp = tmp * window
@@ -108,7 +120,7 @@ def calc_mfcc(x, sr, win_length=1024, hop_length=512, mfcc_dim=12):
         # get mel-filter bank
         # number of channels in mel-filter bank
         numChannels = 26
-        filterbank, _ = melFilterBank(sr, win_length, numChannels)
+        filterbank = melFilterBank(sr, win_length, numChannels)
         # get mel-scale spectrogram
         tmp = np.dot(filterbank, tmp)
         # logarithmize.
@@ -125,24 +137,29 @@ def calc_mfcc(x, sr, win_length=1024, hop_length=512, mfcc_dim=12):
     return mfcc
 
 
-# x = np.linspace(0, 5, 1)
-def get_delta(x, y):
-    delta, _ = np.polyfit(x, y, 1)
-    return delta
+def delta(input, mfcc_dim, k):
+    """get Δmfcc (or ΔΔmfcc).
 
+    Args:
+        input (np.ndarray): mfcc (or Δmfcc)
+        mfcc_dim (int): dimension number of mfcc (or Δmfcc)
+        k (int): number of frames to get Δmfcc (or ΔΔmfcc)
 
-def delta(input, k):
-    output = input
+    Returns:
+        np.ndarray: Δmfcc (or ΔΔmfcc)
+    """
+    output = np.zeros((mfcc_dim, input.shape[1] - 2 * k))
     for i in range(input.shape[1] - 2 * k):
+        # extract k frames each from the front and back
         tmp = input[:, i: i + 2 * k + 1]
-        delta = []
-        for j in range(12):
-            # print(tmp[j:j + 1, :][0])
-            # print(np.arange(-k, k + 1, 1))
+        delta = [0] * mfcc_dim
+        # calculate the amount of variation for each dimension
+        for j in range(mfcc_dim):
             a, _ = np.polyfit(np.arange(-k, k + 1, 1), tmp[j:j + 1, :][0], 1)
-            delta.append(a)
-        delta = np.array(delta).reshape(12, -1)
-        output[:, i+k:i+k+1] = input[:, i+k:i+k+1] + delta[0]
+            delta[j] = a
+        delta = np.array(delta).reshape(mfcc_dim, -1)
+        output[:, i:i + 1] = delta
+
     return output
 
 
@@ -155,14 +172,14 @@ def main():
     wav, sr = librosa.load(audio_path, mono=True)
 
     # set drawing area
-    plt.rcParams["figure.figsize"] = (14, 10)
+    plt.rcParams["figure.figsize"] = (14, 11)
     fig, ax = plt.subplots(4, 1)
     fig.tight_layout(rect=[0.05, 0, 1, 0.95])
     fig.subplots_adjust(hspace=0.3)
 
     # set paramaters
-    win_length = 1024
-    hop_length = 512
+    win_length = 512
+    hop_length = 256
 
     # get original spectrogram
     spectrogram = librosa.stft(wav, win_length=win_length, hop_length=hop_length)
@@ -170,35 +187,34 @@ def main():
 
     # plot original spectrogram on ax[0]
     img = librosa.display.specshow(spectrogram_db, y_axis="log", sr=sr, cmap="rainbow", ax=ax[0])
-    ax[0].set(title="original spectrogram", xlabel='time[s]', ylabel='frequency [Hz]')
+    ax[0].set(title="original spectrogram", xlabel="time[s]", ylabel="frequency [Hz]")
     fig.colorbar(img, aspect=10, pad=0.01, extend="both", ax=ax[0], format="%+2.f dB")
 
     # apply pre-emphasis filter
     wav = preEmphasis(wav)
 
-    # apply hamming window
-    hammingWindow = np.hamming(len(wav))
-    wav = wav * hammingWindow
-
     # mfcc
     mfcc_dim = 12
-    mfcc = calc_mfcc(wav, sr, win_length=win_length, hop_length=hop_length, mfcc_dim=mfcc_dim)
+    mfcc = get_mfcc(wav, sr, win_length=win_length, hop_length=hop_length, mfcc_dim=mfcc_dim)
     wav_time = wav.shape[0] // sr
     extent = [0, wav_time, 0, mfcc_dim]
     img1 = ax[1].imshow(np.flipud(mfcc), aspect="auto", extent=extent, cmap="rainbow")
-    ax[1].set(title="MFCC sequence", xlabel=None, ylabel="MFCC", yticks=range(0, 13, 2))
+    ax[1].set(title="MFCC sequence", xlabel="time[s]", ylabel="MFCC", yticks=range(0, 13, 2))
     fig.colorbar(img1, aspect=10, pad=0.01, extend="both", ax=ax[1], format="%+2.f dB")
 
-    dmfcc = delta(mfcc, 2)
+    # Δmfcc
+    dmfcc = delta(mfcc, mfcc_dim, k=2)
     img2 = ax[2].imshow(np.flipud(dmfcc), aspect="auto", extent=extent, cmap="rainbow")
-    ax[2].set(title="ΔMFCC sequence", xlabel=None, ylabel="MFCC", yticks=range(0, 13, 2))
+    ax[2].set(title="ΔMFCC sequence", xlabel="time[s]", ylabel="ΔMFCC", yticks=range(0, 13, 2))
     fig.colorbar(img2, aspect=10, pad=0.01, extend="both", ax=ax[2], format="%+2.f dB")
 
-    dmfcc = delta(mfcc, 2)
-    img3 = ax[3].imshow(np.flipud(dmfcc), aspect="auto", extent=extent, cmap="rainbow")
-    ax[3].set(title="ΔΔMFCC sequence", xlabel=None, ylabel="MFCC", yticks=range(0, 13, 2))
+    # ΔΔmfcc
+    ddmfcc = delta(dmfcc, mfcc_dim, k=2)
+    img3 = ax[3].imshow(np.flipud(ddmfcc), aspect="auto", extent=extent, cmap="rainbow")
+    ax[3].set(title="ΔΔMFCC sequence", xlabel="time[s]", ylabel="ΔΔMFCC", yticks=range(0, 13, 2))
     fig.colorbar(img3, aspect=10, pad=0.01, extend="both", ax=ax[3], format="%+2.f dB")
 
+    fig.tight_layout()
     fig.savefig("mfcc.png")
 
 
