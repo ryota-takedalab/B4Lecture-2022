@@ -54,21 +54,17 @@ def melfilterbank(sr, shift_size, n_channel):
     dmel = melnyq / (n_channel + 1)  # center frequency of each filter on the Mel scale
     melcenters = np.arange(1, n_channel + 1) * dmel
     fcenters = meltohz(melcenters)
-    indexcenter = np.round(fcenters / df)  # Convert center frequency to frequency index
+    indexcenter = np.round(fcenters / df).astype(int)  # Convert center frequency to frequency index (int)
     indexstart = np.hstack(([0], indexcenter[0:n_channel - 1]))
     indexstop = np.hstack((indexcenter[1:n_channel], [nmax]))
 
     filterbank = np.zeros((n_channel, nmax))
 
-    for c in range(0, n_channel):
+    for c in range(n_channel):
         # Find the point from the left of the triangular filter
-        increment= 1.0 / (indexcenter[c] - indexstart[c])
-        for i in range(int(indexstart[c]), int(indexcenter[c])):
-            filterbank[c, i] = (i - indexstart[c]) * increment
+        filterbank[c, indexstart[c]:indexcenter[c]] = np.linspace(0, 1, indexcenter[c] - indexstart[c], endpoint=False)
         # Find the point from the right of the triangular filter
-        decrement = 1.0 / (indexstop[c] - indexcenter[c])
-        for i in range(int(indexcenter[c]), int(indexstop[c])):
-            filterbank[c, i] = 1.0 - ((i - indexcenter[c]) * decrement)
+        filterbank[c, indexcenter[c]:indexstop[c]] = np.linspace(1, 0, indexstop[c] - indexcenter[c], endpoint=False)
 
     return filterbank
 

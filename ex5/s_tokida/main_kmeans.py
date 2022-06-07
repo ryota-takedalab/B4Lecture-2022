@@ -30,12 +30,17 @@ def k_means_plusplus(data, num_c):
     """
     
     centroid=np.zeros(data.shape[1] * num_c).reshape(num_c, data.shape[1])
-    p = np.repeat(1/data.shape[0], data.shape[0])  # 最初の確率は全て同じ
-    
-    for k in range(num_c):  # 中心の数がクラスタ数となるまで
-        centroid[k, :] = data[np.random.choice(range(data.shape[0]), 1, p=p)]  # 1つ目の中心
-        p = ((data - centroid[k, :])**2).sum(axis = 1) / ((data - centroid[k, :])**2).sum()  # 1つ目の中心からの距離によって確立作成
-    
+    # 1つ目のcentroidをランダムに選ぶ
+    centroid[0, :] = data[np.random.choice(range(data.shape[0]), 1)]
+    p = ((data - centroid[0, :])**2).sum(axis = 1) / ((data - centroid[0, :])**2).sum()  # 1つ目の中心からの距離によって確立作成
+
+    for k in range(1, num_c):  # centroidがクラスタ数となるまで
+        centroid[k, :] = data[np.random.choice(range(data.shape[0]), 1, p=p)]
+        d = ((data[:, :, np.newaxis] - centroid.T[np.newaxis, :, :]) ** 2).sum(axis = 1)
+        d_min = d.argmin(axis = 1)
+        # 最も近いcentroidからの距離によって確率作成
+        p = ((data - centroid[d_min, :])**2).sum(axis = 1) / ((data - centroid[d_min, :])**2).sum()
+
     return centroid
 
 def k_means(data, num_c, centroid):
@@ -55,6 +60,10 @@ def k_means(data, num_c, centroid):
     max_iter = 100
     
     while(count < max_iter): #各データポイントが属しているclusterが変化しなくなった、または一定回数max_iterの繰り返しを越した時
+         
+        # distance = np.array([np.sum((centroid[i] - data) ** 2, axis = 1) for i in range(num_c)])
+        # (num_c, num_data) <- (num_c, num_data, dim_data) <- (num_c, 1, dim_data) - (1, num_data, dim_data)
+        distance = np.sum((centroid[:,np.newaxis,:] - data[np.newaxis,:,:]) ** 2, axis = -1)
 
         distance = np.array([np.sum((centroid[i] - data) ** 2, axis = 1) for i in range(num_c)])
         cluster = np.argmin(distance, axis = 0)  #各列ごとの最大値の行番号
@@ -66,7 +75,7 @@ def k_means(data, num_c, centroid):
             print('count:', count)
             break
     
-    return cluster
+    return cluster, centroid
 
 def render_frame(df, centroid, cluster, colors, angle, filename):
     """define render frame to make gif
@@ -109,9 +118,10 @@ def main():
     if args.init == 'random':
         centroid = init_random(df, num_c)
     elif args.init == 'kmeans++':
+        print('++')
         centroid = k_means_plusplus(df, num_c)
 
-    cluster = k_means(df, num_c, centroid)
+    cluster, centroid = k_means(df, num_c, centroid)
     colors = ['y', 'm', 'c', 'r', 'g', 'b']
 
     if df.shape[1] == 2:
@@ -123,7 +133,7 @@ def main():
 
         plt.legend()
         plt.tight_layout()
-        # plt.savefig('fig/' + f'{filename}_{num_c}.png')
+        plt.savefig('fig/' + f'{filename}_{num_c}_++1.png')
         plt.show()
         plt.close()
 
@@ -137,13 +147,13 @@ def main():
         
         plt.legend()
         plt.tight_layout()
-        # plt.savefig('fig/' + f'{filename}_{num_c}.png')
+        plt.savefig('fig/' + f'{filename}_{num_c}.png')
         plt.show()
         plt.close()
 
         # gif image
-        # images = [render_frame(df, centroid, cluster, colors, angle*2, filename) for angle in range(90)]
-        # images[0].save('fig/' + f'{filename}_{num_c}.gif', save_all=True, append_images=images[1:], duration=100, loop=0)
+        images = [render_frame(df, centroid, cluster, colors, angle*2, filename) for angle in range(90)]
+        images[0].save('fig/' + f'{filename}_{num_c}.gif', save_all=True, append_images=images[1:], duration=100, loop=0)
 
 if __name__ == "__main__":
     main()
