@@ -134,12 +134,12 @@ class MFCC:
         Returns:
             ndarray: delta of MFCC
         """
-        mfcc_pad = np.pad(mfcc, [(k, k + 1), (0, 0)], "edge")
+        mfcc_pad = np.pad(mfcc, [(0, 0), (k, k + 1)], "edge")
         k_sq = np.sum(np.arange(-k, k + 1) ** 2)
         m = np.arange(-k, k + 1)
         d_mfcc = np.zeros_like(mfcc)
-        for i in range(mfcc.shape[0]):
-            d_mfcc[i] = np.dot(m, mfcc_pad[i : i + k * 2 + 1])
+        for i in range(mfcc.shape[1]):
+            d_mfcc[:, i] = np.dot(mfcc_pad[:, i : i + k * 2 + 1], m.T)
         return d_mfcc / k_sq
 
     def mfcc_plot(self, filename):
