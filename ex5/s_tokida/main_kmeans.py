@@ -32,16 +32,18 @@ def k_means_plusplus(data, num_c):
     centroid=np.zeros(data.shape[1] * num_c).reshape(num_c, data.shape[1])
     # 1つ目のcentroidをランダムに選ぶ
     centroid[0, :] = data[np.random.choice(range(data.shape[0]), 1)]
-    p = ((data - centroid[0, :])**2).sum(axis = 1) / ((data - centroid[0, :])**2).sum()  # 1つ目の中心からの距離によって確立作成
+    d = ((data - centroid[0]) ** 2).sum(axis = 1)
+    p = d / d.sum()
+    d_min = d
 
     for k in range(1, num_c):  # centroidがクラスタ数となるまで
         centroid[k, :] = data[np.random.choice(range(data.shape[0]), 1, p=p)]
-        d = ((data[:, :, np.newaxis] - centroid.T[np.newaxis, :, :]) ** 2).sum(axis = 1)
-        d_min = d.argmin(axis = 1)
-        # 最も近いcentroidからの距離によって確率作成
-        p = ((data - centroid[d_min, :])**2).sum(axis = 1) / ((data - centroid[d_min, :])**2).sum()
+        d = ((data - centroid[k]) ** 2).sum(axis = 1)
+        d_min = np.minimum(d_min, d)  # k-1 回目での d_min と centoroid[k] に関する距離を比較
+        p = d_min / d_min.sum()  # 最も近いcentroidからの距離によって確率作成
 
     return centroid
+
 
 def k_means(data, num_c, centroid):
     """clustering by kmeans method
@@ -59,14 +61,12 @@ def k_means(data, num_c, centroid):
     count = 0
     max_iter = 100
     
-    while(count < max_iter): #各データポイントが属しているclusterが変化しなくなった、または一定回数max_iterの繰り返しを越した時
+    while(count < max_iter):
          
-        # distance = np.array([np.sum((centroid[i] - data) ** 2, axis = 1) for i in range(num_c)])
-        # (num_c, num_data) <- (num_c, num_data, dim_data) <- (num_c, 1, dim_data) - (1, num_data, dim_data)
         distance = np.sum((centroid[:,np.newaxis,:] - data[np.newaxis,:,:]) ** 2, axis = -1)
 
         distance = np.array([np.sum((centroid[i] - data) ** 2, axis = 1) for i in range(num_c)])
-        cluster = np.argmin(distance, axis = 0)  #各列ごとの最大値の行番号
+        cluster = np.argmin(distance, axis = 0)
         
         centroid_bef = centroid
         centroid = np.array([np.mean(data[cluster == i], axis = 0) for i in range(num_c)])
