@@ -132,17 +132,29 @@ def main():
         # plt.savefig('fig/' + f'{filename}_2D.png')
         plt.show()
         plt.close()
-
         
     else:
         # using normalized data
         p_rate = np.zeros_like(c_rate)
         for i in range(c_rate.shape[0]):
             p_rate[i] = np.sum(c_rate[:i+1])  # cumulative contribution rate
-            if p_rate[i] >= 0.9:
-                print('累積寄与率90%以上となるのは')
-                print(i+1, '次元以上')
-                return 
+
+        p_min = np.min(np.where(p_rate >= 0.9))
+        
+        plt.figure()
+        plt.title('cumulative contribution rate')
+        plt.xlabel('dimention')
+        plt.ylabel('cumulative contribution rate')
+        x = np.arange(1, p_rate.shape[0]+1)
+        y = np.linspace(min(p_rate), max(p_rate), p_rate.shape[0])
+        plt.plot(x, p_rate, color = 'k')
+        plt.plot(x, np.full(p_rate.shape[0], p_rate[p_min]), color = 'c', linestyle = 'dashed', label = f'rate={p_rate[p_min]:.4f}')
+        plt.plot(np.full(p_rate.shape[0], p_min), y, color = 'y', linestyle = 'dashed', label = f'dim={p_min+1}')
+        plt.legend(loc='lower right')
+        plt.tight_layout()
+        plt.savefig('cumulative.png')
+        plt.show()
+        plt.close()
                 
 
 if __name__ == "__main__":
