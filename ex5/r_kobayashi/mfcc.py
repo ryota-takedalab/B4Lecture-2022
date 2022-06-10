@@ -6,9 +6,6 @@ import librosa
 import matplotlib.pyplot as plt
 import scipy.signal as ssig
 from scipy.fftpack import dct
-import warnings
-
-warnings.filterwarnings("ignore")
 
 
 def preemphasis(data,p=0.97):
