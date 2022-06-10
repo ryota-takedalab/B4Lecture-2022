@@ -31,11 +31,7 @@ def read_csv(f_name):
     return data
 
 
-def my_removesuffix(str, suffix):
-    return str[: -len(suffix)] if str.endswith(suffix) else str
-
-
-def scatter_2d(data, cen, save_fname, K, clu, graph_title):
+def scatter_2d(data, cen, save_fname, clu_num, clu, graph_title):
     """
     2次元散布図
 
@@ -43,9 +39,11 @@ def scatter_2d(data, cen, save_fname, K, clu, graph_title):
     -----------
     data : numpy.ndarray
         csv data
+    cen : np.ndarray
+        center of cluster
     save : str
         save file name
-    K : int
+    clu_num : int
         the number of cluster
     clu : numpy.ndarray
         cluster
@@ -57,19 +55,17 @@ def scatter_2d(data, cen, save_fname, K, clu, graph_title):
     cmap = plt.get_cmap("tab10")
     cen_x = cen[:, 0]
     cen_y = cen[:, 1]
-    for i in range(K):
+    for i in range(clu_num):
         cdata = data[clu==i]
         x = cdata[:,0]
         y = cdata[:,1]
         #計算値とデータをプロット
         ax.plot(x, y, marker="o", linestyle="None", color=cmap(i))
     ax.plot(cen_x, cen_y, marker="x", markersize=12, markeredgewidth=5, linestyle="None", color="black")
-    ax.set(
-        title=graph_title,
-        xlabel="X",
-        ylabel="Y",
-    )
-    
+
+    plt.title(graph_title, fontsize=25)
+    plt.xlabel("X")
+    plt.ylabel("Y")
     plt.grid()
     plt.tight_layout()
     if save_fname:
@@ -79,7 +75,7 @@ def scatter_2d(data, cen, save_fname, K, clu, graph_title):
     plt.show()
 
 
-def scatter_3d(data, cen, save_fname, K, clu, graph_title):
+def scatter_3d(data, cen, save_fname, clu_num, clu, graph_title):
     """
     3次元散布図
 
@@ -87,9 +83,11 @@ def scatter_3d(data, cen, save_fname, K, clu, graph_title):
     -----------
     data : numpy.ndarray
         csv data
+    cen : numpy.ndarray
+        center of cluster
     save_fname : str
         save file name
-    K : int
+    clu_num : int
         the number of cluster
     clu : numpy.ndarray
         cluster
@@ -103,20 +101,19 @@ def scatter_3d(data, cen, save_fname, K, clu, graph_title):
     cen_y = cen[:, 1]
     cen_z = cen[:, 2]
     #クラスタごとで描画
-    for i in range(K):
+    for i in range(clu_num):
         cdata = data[clu==i]
         x = cdata[:,0]
         y = cdata[:,1]
         z = cdata[:,2]
         ax.plot(x, y, z, marker="o", linestyle='None', color=cmap(i))
     ax.plot(cen_x, cen_y, cen_z, marker="x", markersize=12, markeredgewidth=5, linestyle="None", color="black")
+    plt.title(graph_title, fontsize=25)
     ax.set(
-        title=graph_title,
         xlabel="X",
         ylabel="Y",
-        zlabel="Z",
+        zlabel="Z"
     )
-    
     def update(i):
         ax.view_init(elev=30.0, azim=3.6*i)
         return fig
@@ -135,7 +132,7 @@ def scatter_3d(data, cen, save_fname, K, clu, graph_title):
     plt.show()
 
 
-def minimax(data, K):
+def minimax(data, clu_num):
     """
     ミニマックス法
 
@@ -143,7 +140,7 @@ def minimax(data, K):
     -----------
     data : numpy.ndarray
         csv data
-    K : int
+    clu_num : int
         the number of cluster
       
     return
@@ -153,20 +150,18 @@ def minimax(data, K):
     """
     num, dim = data.shape
     cidx = random.randint(0, num-1)
-    dis = np.zeros((K, num))
-    cen = np.zeros((K, dim))
-    for k in range(K):
+    dis = np.zeros((clu_num, num))
+    cen = np.zeros((clu_num, dim))
+    for k in range(clu_num):
         cen[k] = data[cidx]
         # 距離計算
-        r = np.sum((data-data[cidx])**2, axis=1)
-        # 距離保存
-        dis[k] =  r
+        dis[k] =  np.sum((data-data[cidx])**2, axis=1)
         cidx = np.argmax(np.min(dis[:k+1], axis=0))
 
     return cen
 
 
-def kplus(data, K):
+def kplus(data, clu_num):
     """
     kmeans++
 
@@ -174,7 +169,7 @@ def kplus(data, K):
     -----------
     data : numpy.ndarray
         csv data
-    K : int
+    clu_num : int
         the number of cluster
       
     return
@@ -184,16 +179,13 @@ def kplus(data, K):
     """
     num, dim = data.shape
     cidx = random.randint(0, num-1)
-    dis = np.zeros((K, num))
-    cen = np.zeros((K, dim))
+    dis = np.zeros((clu_num, num))
+    cen = np.zeros((clu_num, dim))
     pr = np.zeros(num)
-    for k in range(K):
+    for k in range(clu_num):
         cen[k] = data[cidx]
         # 距離計算
-        r = np.sum((data-data[cidx])**2, axis=1)
-        # 距離保存
-        dis[k] =  r
-        
+        dis[k] =  np.sum((data-data[cidx])**2, axis=1)
         # 確率作成
         pr = np.min(dis[:k+1], axis=0)
         pr = pr / np.sum(pr)
@@ -203,7 +195,7 @@ def kplus(data, K):
     return cen
 
 
-def LGB(data, K, cen):
+def LGB(data, clu_num, cen):
     """
     LGB法
 
@@ -211,7 +203,7 @@ def LGB(data, K, cen):
     -----------
     data : numpy.ndarray
         csv data
-    K : int
+    clu_num : int
         the number of cluster
     cen : numpy.ndarray
         center of cluster
@@ -229,14 +221,14 @@ def LGB(data, K, cen):
     M = newcen.shape[0]
     # kmeansアルゴリズム
     newcen, clu = kmean(data, M, newcen)
-    if newcen.shape[0] >= K:
-        newcen = newcen[random.sample(range(len(newcen)), K)]
+    if newcen.shape[0] >= clu_num:
+        newcen = newcen[random.sample(range(len(newcen)), clu_num)]
         return newcen
     else:
-        return LGB(data, K, newcen)
+        return LGB(data, clu_num, newcen)
         
 
-def method(data, K, mname):
+def method(data, clu_num, mname):
     """
     初期値決定方法
 
@@ -244,7 +236,7 @@ def method(data, K, mname):
     -----------
     data : numpy.ndarray
         csv data
-    K : int
+    clu_num : int
         the number of cluster
     mname : str
         method name
@@ -254,25 +246,24 @@ def method(data, K, mname):
     cen :   numpy.ndarray
         center of cluster
     """
+    assert mname in ["minimax", "kplus", "LGB"], "error method name"
+
     if mname == "minimax":
-        cen = minimax(data, K)
+        cen = minimax(data, clu_num)
     elif mname == "kplus":
-        cen = kplus(data, K)
-    elif mname == "LGB":
+        cen = kplus(data, clu_num)
+    else:
         if data.shape[1] == 2:
             ce = np.zeros((1, 2))
         elif data.shape[1] == 3:
             ce = np.zeros((1, 3))
         ce[0] = np.mean(data, axis=0)
-        cen = LGB(data, K, ce)
-    else:
-        print("error:method name")
-        sys.exit(1)
+        cen = LGB(data, clu_num, ce)
 
     return cen
 
 
-def kmean(data, K, cen):
+def kmean(data, clu_num, cen):
     """
     kmeanアルゴリズム
 
@@ -280,7 +271,7 @@ def kmean(data, K, cen):
     -----------
     data : numpy.ndarray
         csv data
-    K : int
+    clu_num : int
         the number of cluster
     cen : numpy.ndarray
         center of cluster
@@ -295,16 +286,16 @@ def kmean(data, K, cen):
         cluster
     """
     num, dim = data.shape
-    dis = np.zeros((K, num))
-    newcen = np.zeros((K, dim))
+    dis = np.zeros((clu_num, num))
+    newcen = np.zeros((clu_num, dim))
     while (True):
-        for k in range(0, K):
+        for k in range(0, clu_num):
             # 距離計算
             r = np.sum((data-cen[k])**2, axis=1)
             # 距離保存
             dis[k] = r
         clu = np.argmin(dis, axis=0)
-        for i in range(0, K):            
+        for i in range(0, clu_num):            
             newcen[i] = data[clu==i].mean(axis=0)
         if np.allclose(cen,newcen):
             break
@@ -319,7 +310,7 @@ def main(args):
     # クラスタ計算&描画
     cen = method(data, clu_num, methodname)
     cen, clu = kmean(data, clu_num, cen)
-    graphtitle = my_removesuffix(args.fname, ".csv")
+    graphtitle = os.path.splitext(args.fname)[0]
 
     if data.shape[1] == 2:
         scatter_2d(data, cen, save_fname, clu_num, clu, graphtitle)

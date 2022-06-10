@@ -11,7 +11,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def preemphasis(data,p):
+def preemphasis(data,p=0.97):
     """
     係数(1.0, -p)のFIRフィルタを作成
 
@@ -32,7 +32,7 @@ def preemphasis(data,p):
     return f
 
 
-def melFB(sr, F_size, numCh):
+def melFB(sr, F_size=1024, numCh=12):
     """
     メルフィルタバンクを作成
 
@@ -153,11 +153,9 @@ def mfcc_plot(mfcc, d, dd, Ts):
     img = ax1.imshow(mfcc.T, extent=[0, Ts, 0, 12], aspect="auto", origin="lower")
     ax1.set_ylabel("MFCC", fontsize=15)
     fig.colorbar(img,  ax=ax1)
-    
     img = ax2.imshow(d.T, extent=[0, Ts, 0, 12], aspect="auto", origin="lower")
     ax2.set_ylabel("ΔMFCC", fontsize=15)
     fig.colorbar(img, ax=ax2)
-
     img = ax3.imshow(dd.T, extent=[0, Ts, 0, 12], aspect="auto", origin="lower")
     ax3.set_ylabel("ΔΔMFCC", fontsize=15)
     fig.colorbar(img, ax=ax3)
@@ -180,7 +178,7 @@ def main(args):
     overlap = F_size // 2 
     F_num = data.shape[0] 
     Ts = float(F_num) / sr 
-    S_num = int(F_num//(F_size-overlap) - 1) 
+    S_num = int(F_num//(args.F_size-overlap) - 1) 
 
     win = np.hamming(F_size)
     p = args.p
@@ -190,31 +188,27 @@ def main(args):
     windata = np.zeros((S_num, F_size))
     for i in range(S_num):
         windata[i] = pe_data[i*overlap:i*overlap+F_size] * win
-    fftdata = np.fft.fft(windata)
-    # logdata = np.log10(np.abs(fftdata))
-
+    spec = np.fft.fft(windata)
+    # spec_db = librosa.amplitude_to_db(np.abs(spec))
     # メルフィルタバンクを作成
     numCh = args.numCh
     df = sr / F_size   # 周波数解像度（周波数インデックス1あたりのHz幅）
     fb = melFB(sr, F_size, numCh)
 
     # メルフィルタバンクを掛けて、メルスペクトルに変換
-    mspec = np.log10(np.dot(np.abs(fftdata[:,:F_size//2]), fb.T))
-
+    mspec = np.log10(np.dot(np.abs(spec[:,:F_size//2]), fb.T))
     # 離散コサイン変換
     mfcc = dct(mspec)
-
     # デルタ
     d = delta(mfcc)
     dd = delta(d)
-
     # メルフィルタバンクのプロット
     for i in np.arange(numCh):
         plt.plot(np.arange(0, F_size / 2) * df, fb[i])
     # savefig("melfilterbank.png")
     plt.show()
 
-    plt.figure(figsize=(10,5))
+    plt.figure(figsize=(10,6))
     plt.specgram(data, Fs=sr, scale_by_freq="True")
     plt.colorbar()
     plt.title("Spectrogram", fontsize=15)
@@ -231,8 +225,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("fname", type=str, help="file name")
     parser.add_argument("--p", type=int, default=0.97, help="filter coefficient")
-    parser.add_argument("--numCh", type=int, default=20, help="The number of channel")
-    parser.add_argument("--F_size", type=int, default=1024, help="frame size")
+    parser.add_argument("--numCh", type=int, default=12, help="The number of channel")
+    parser.add_argument("-f", "--F_size", type=int, default=1024, help="frame size")
     args = parser.parse_args()
 
     main(args)
