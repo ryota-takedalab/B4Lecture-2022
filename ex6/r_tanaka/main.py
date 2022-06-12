@@ -6,7 +6,17 @@ from io import BytesIO
 from PIL import Image
 
 
-def eigen(data):
+def pca(data):
+    """principal component analysis
+
+    Args:
+        data (np.ndarray): data extracted from csv file.
+
+    Returns:
+        np.ndarray: eigenvalues
+        np.ndarray: eigenvector
+        np.ndarray: standardized data
+    """
     # standardization
     sc = StandardScaler()
     data_std = sc.fit_transform(data)
@@ -72,7 +82,7 @@ def main():
     data3 = df_data3.to_numpy()
 
     # Data1
-    data1_eigen_vals, data1_eigen_vecs, _ = eigen(data1)
+    data1_eigen_vals, data1_eigen_vecs, _ = pca(data1)
     data1_contrib = data1_eigen_vals/np.sum(np.abs(data1_eigen_vals))
     # plot
     xlist = np.linspace(np.min(data1[:, 0]), np.max(data1[:, 0]), 100)
@@ -83,7 +93,7 @@ def main():
     ax1.legend()
 
     # Data2
-    data2_eigen_vals, data2_eigen_vecs, data2_std = eigen(data2)
+    data2_eigen_vals, data2_eigen_vecs, data2_std = pca(data2)
     data2_contrib = data2_eigen_vals/np.sum(np.abs(data2_eigen_vals))
     # plot
     cmap = plt.get_cmap("tab10")
@@ -107,20 +117,23 @@ def main():
     ax3.legend()
 
     # Data3
-    data3_eigen_vals, data3_eigen_vecs, data3_std = eigen(data3)
+    data3_eigen_vals, data3_eigen_vecs, data3_std = pca(data3)
     data3_contrib = data3_eigen_vals/np.sum(np.abs(data3_eigen_vals))
-    xlist = np.arange(1, len(data3_eigen_vals), 1)
-    ylist = np.cumsum(data3_contrib[1:len(data3_eigen_vals)])
+    xlist = np.arange(0, len(data3_eigen_vals)-1, 1)
+    ylist = np.cumsum(data3_contrib[:len(data3_eigen_vals)-1])
     # set drawing area for data2(compressed)
     fig4, ax4 = plt.subplots()
     ax4.plot(xlist, ylist)
     ax4.set(title="data4", xlabel="principal components", ylabel="cumulative contribution ratio")
+    ax4.grid()
 
     # display changes in cumulative contribution ratio
-    for i in range(1, len(data3_eigen_vals) - 1):
-        print("total principal components = %i" % i)
-        print("cumulative contribution ratio = ", ylist[i])
-        print("-----------------------------")
+    for i in range(0, len(data3_eigen_vals)-1):
+        if ylist[i] > 0.9:
+            ax4.vlines(i, ymin=0, ymax=ylist[i], colors='red', linestyle='dashed', linewidth=2)
+            ax4.hlines(ylist[i], xmin=0, xmax=i, colors='red', linestyle='dashed', linewidth=2)
+            ax4.text(i, ylist[i], "(x,y)=({}, {:.3f})".format(i, ylist[i]), va='top', size='large')
+            break
 
     # save figures
     images = [render_frame(fig2, ax2, angle) for angle in range(360)]
@@ -129,7 +142,7 @@ def main():
     fig1.savefig("data1.png")
     fig2.savefig("data2.png")
     fig3.savefig("data2(compressed).png")
-    fig4.savefig("data4.png")
+    fig4.savefig("data3.png")
 
 
 if __name__ == "__main__":
