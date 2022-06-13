@@ -29,6 +29,12 @@ def pca(data):
         np.max(np.abs(eigen_vectors), axis=1) == np.max(eigen_vectors, axis=1)
     eigen_vectors = np.where(to_reverse, eigen_vectors * -1, eigen_vectors)
     
+    # contribution rate
+    contribution_rate = np.zeros(len(eigen_values))
+    for i in range(len(eigen_values)):
+        contribution_rate[i] = \
+            np.sum(eigen_values[:i + 1]) / np.sum(eigen_values)
+    print(contribution_rate)
     return eigen_values, eigen_vectors,
 
 
