@@ -9,7 +9,7 @@ from PIL import Image
 def pca(data):
     """principal component analysis
     Args:
-        data (pandas.core.frame.DataFrame): imput data
+        data (pandas.core.frame.DataFrame): input data
     Returns:
         eigen_sorted (ndarray): eigenvalue and eigenvector (sorted)
         c_rate (ndarray): contribution rate
@@ -17,20 +17,20 @@ def pca(data):
 
     cov_matrix = np.cov(data.T)
     eigen_val, eigen_vec = np.linalg.eig(cov_matrix)
-    eigen = np.hstack([eigen_val[:, np.newaxis], eigen_vec])
+    eigen = np.hstack([eigen_val[:, np.newaxis], eigen_vec.T])
     # sort by eigen_val
     eigen_sorted = np.array(sorted(eigen, key=lambda x: x[0], reverse=True))
-
+    eigen_vec_sorted = eigen_sorted[:, 1:].T
     # calculate contribution rate
     c_rate = eigen_sorted[:, 0] / sum(eigen_sorted[:, 0])
 
-    return eigen_sorted, c_rate
+    return eigen_vec_sorted, c_rate
 
 
 def render_frame(data, eigen, c_rate, angle, filename):
     """define render frame to make gif
     Args:
-        df (ndarray): imput data
+        df (ndarray): input data
         angle (int): angle
         filename (str): filename
     Returns:
@@ -43,9 +43,9 @@ def render_frame(data, eigen, c_rate, angle, filename):
     x1 = np.linspace(min(data[:, 0]), max(data[:, 0]), data.shape[0])
     eigen_x2 = eigen[1] / eigen[0]
     eigen_x3 = eigen[2] / eigen[0]
-    ax.plot(x1, eigen_x2[1]*x1, eigen_x3[1]*x1, color = 'y', label = f'c rate={c_rate[0]:.3f}')
-    ax.plot(x1, eigen_x2[2]*x1, eigen_x3[2]*x1, color = 'm', label = f'c rate={c_rate[1]:.3f}')
-    ax.plot(x1, eigen_x2[3]*x1, eigen_x3[3]*x1, color = 'c', label = f'c rate={c_rate[2]:.3f}')
+    ax.plot(x1, eigen_x2[0]*x1, eigen_x3[0]*x1, color = 'c', label = f'c rate={c_rate[0]:.3f}')
+    ax.plot(x1, eigen_x2[1]*x1, eigen_x3[1]*x1, color = 'y', label = f'c rate={c_rate[1]:.3f}')
+    ax.plot(x1, eigen_x2[2]*x1, eigen_x3[2]*x1, color = 'm', label = f'c rate={c_rate[2]:.3f}')
 
     ax.view_init(30, angle)
     plt.close()
@@ -88,8 +88,8 @@ def main():
         # ax.quiver(vec_s[0], vec_s[1], eigen[1][1], eigen[1][2], angles='xy', scale_units='xy', scale=1, color = 'pink')
         
         eigen_x2 = eigen[1] / eigen[0]
-        ax.plot(x1, eigen_x2[1]*x1, color = 'c', label = f'c rate={c_rate[0]:.3f}')
-        ax.plot(x1, eigen_x2[2]*x1, color = 'y', label = f'c rate={c_rate[1]:.3f}')
+        ax.plot(x1, eigen_x2[0]*x1, color = 'c', label = f'c rate={c_rate[0]:.3f}')
+        ax.plot(x1, eigen_x2[1]*x1, color = 'y', label = f'c rate={c_rate[1]:.3f}')
         
         plt.legend()
         plt.tight_layout()
@@ -106,9 +106,9 @@ def main():
         x1 = np.linspace(min(data[:, 0]), max(data[:, 0]), data.shape[0])
         eigen_x2 = eigen[1] / eigen[0]
         eigen_x3 = eigen[2] / eigen[0]
-        ax.plot(x1, eigen_x2[1]*x1, eigen_x3[1]*x1, color = 'c', label = f'c rate={c_rate[0]:.3f}')
-        ax.plot(x1, eigen_x2[2]*x1, eigen_x3[2]*x1, color = 'y', label = f'c rate={c_rate[1]:.3f}')
-        ax.plot(x1, eigen_x2[3]*x1, eigen_x3[3]*x1, color = 'm', label = f'c rate={c_rate[2]:.3f}')
+        ax.plot(x1, eigen_x2[0]*x1, eigen_x3[0]*x1, color = 'c', label = f'c rate={c_rate[0]:.3f}')
+        ax.plot(x1, eigen_x2[1]*x1, eigen_x3[1]*x1, color = 'y', label = f'c rate={c_rate[1]:.3f}')
+        ax.plot(x1, eigen_x2[2]*x1, eigen_x3[2]*x1, color = 'm', label = f'c rate={c_rate[2]:.3f}')
 
         plt.legend()
         plt.tight_layout()
@@ -121,7 +121,7 @@ def main():
         # images[0].save('fig/' + f'{filename}_pca.gif', save_all=True, append_images=images[1:], duration=100, loop=0)
 
         # compress 3d data to 2d (using normalized data)
-        w = np.stack([eigen[0][1:], eigen[1][1:]], axis = 1)
+        w = np.stack([eigen.T[0], eigen.T[1]], axis = 1)
         data_pca = data @ w
 
         plt.figure()
@@ -152,7 +152,7 @@ def main():
         plt.plot(np.full(p_rate.shape[0], p_min), y, color = 'y', linestyle = 'dashed', label = f'dim={p_min+1}')
         plt.legend(loc='lower right')
         plt.tight_layout()
-        plt.savefig('cumulative.png')
+        # plt.savefig('fig/' + 'cumulative.png')
         plt.show()
         plt.close()
                 
