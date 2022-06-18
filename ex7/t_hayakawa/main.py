@@ -111,9 +111,6 @@ def main():
     method = args.m
     n = data.shape[0]
 
-    # FIXME:乱数シード
-    # np.random.seed(100)
-
     if data.shape[1] == 1:
         start = time.time()
         if method == "r":
@@ -128,6 +125,8 @@ def main():
             model = KMeans(n_clusters=K)
             model.fit(data)
             mu = model.cluster_centers_
+        # 0~1のランダムで分散
+        np.random.seed(1)
         sig = np.random.rand(K, 1, 1)
         pi = np.zeros(K)
         pi += 1 / K
@@ -187,9 +186,9 @@ def main():
             xlabel="Iteration",
             ylabel="Log Likelihood",
         )
-        plt.plot(lh_list[:, 0], lh_list[:, 1])
+        plt.plot(lh_list[1:, 0], lh_list[1:, 1])
         plt.savefig(f"{args.filename}_lh.png")
-        # plt.show()
+        plt.show()
 
     elif data.shape[1] == 2:
         start = time.time()
@@ -259,7 +258,7 @@ def main():
             xlabel="Iteration",
             ylabel="Log Likelihood",
         )
-        plt.plot(lh_list[:, 0], lh_list[:, 1])
+        plt.plot(lh_list[1:, 0], lh_list[1:, 1])
         plt.savefig(f"{args.filename}_lh.png")
         plt.show()
 
