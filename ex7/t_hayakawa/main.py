@@ -100,10 +100,12 @@ def main():
     n = data.shape[0]
 
     if data.shape[1] == 1:
-        # FIXME: 初期値をランダムまたはk - meansで決める
-        mu = np.array([[-1], [3]])
-        sig = np.array([[[1]], [[3]]])
-        pi = np.array([0.5, 0.5])
+        mu = (np.max(data[:, 0]) - np.min(data[:, 0])) * np.random.rand(K, 1) + np.min(
+            data[:, 0]
+        )
+        sig = np.random.rand(K, 1, 1)
+        pi = np.zeros(K)
+        pi += 1 / K
         gmm = GMM(data, K, mu, sig, pi)
         pi, mu, sig, lh_list, iter = gmm.iteration(I=100, e=0.01)
 
@@ -135,14 +137,16 @@ def main():
 
         fig.add_subplot(
             212,
-            title=f"{args.filename} GMM density ({iter} iter)",
+            title=f"{args.filename} GMM stack ({iter} iter)",
             xlabel="x",
             ylabel="probability",
         )
         labels = []
+        stacks = np.zeros((0, pdfs.shape[0]))
         for k in range(K):
             labels.append(f"$\pi{k}$ : {pi[k]:.3f}")
-        plt.stackplot(xx, pdfs[:, 0], pdfs[:, 1], labels=labels)
+            stacks = np.vstack((stacks, pdfs[:, k]))
+        plt.stackplot(xx, stacks, labels=labels)
         plt.legend(bbox_to_anchor=(0.25, 1))
         plt.savefig(f"{args.filename}_gmm.png")
         plt.show()
@@ -160,10 +164,18 @@ def main():
         plt.show()
 
     elif data.shape[1] == 2:
-        # FIXME: 初期値をランダムまたはk - meansで決める
-        mu = np.array([[1, 2], [2, 3], [4, 5]])
-        sig = np.array([[[1, 2], [2, 1]], [[1, 2], [2, 1]], [[1, 2], [2, 1]]])
-        pi = np.array([0.3, 0.4, 0.3])
+        # FIXME: k - meansで決める
+        mu_x = (np.max(data[:, 0]) - np.min(data[:, 0])) * np.random.rand(
+            K, 1
+        ) + np.min(data[:, 0])
+        mu_y = (np.max(data[:, 1]) - np.min(data[:, 1])) * np.random.rand(
+            K, 1
+        ) + np.min(data[:, 1])
+        mu = np.hstack((mu_x, mu_y))
+        # -5~5の間でランダムな値の共分散
+        sig = 10 * np.random.rand(K, 2, 2) - 5
+        pi = np.zeros(K)
+        pi += 1 / K
         gmm = GMM(data, K, mu, sig, pi)
         pi, mu, sig, lh_list, iter = gmm.iteration(I=100, e=0.01)
 
