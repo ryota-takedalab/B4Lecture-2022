@@ -1,8 +1,10 @@
 import numpy as np
 import argparse
+import time
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+from sklearn.cluster import KMeans
 
 
 class GMM:
@@ -35,11 +37,13 @@ class GMM:
         return nume / deno
 
     def calc_gamma(self):
+        # 負担率の計算
         gam = self.pi.reshape(-1, 1) * self.gaus()
         gam /= np.sum(gam, axis=0)
         self.gamma = gam
 
     def update_parames(self):
+        # pi, mu, sigmaの更新
         N_k = np.sum(self.gamma, axis=1)
         self.pi = N_k / self.N
         self.mu = np.sum(
@@ -74,7 +78,7 @@ class GMM:
 
 
 def gaus_pi(data, pi, mu, sigma, D):
-    # 正規分布の値の取得
+    # pi * 正規分布の値の取得
     # (N, D) - (k, D) ->(1, N, D) - (k, 1, D) = (k, N, D)
     diff_data = data[np.newaxis, :, :] - mu[:, np.newaxis, :]
     # (k, N, N)
@@ -89,7 +93,14 @@ def gaus_pi(data, pi, mu, sigma, D):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", type=str, help="data file .csv")
-    parser.add_argument("--k", type=int, default=3, help="cluster number")
+    parser.add_argument("--k", type=int, required=True, help="cluster number")
+    parser.add_argument(
+        "--m",
+        type=str,
+        choices=["r", "km", "km+"],
+        default="r",
+        help="method for deciding first mu, [random, k-means, k-means++]",
+    )
 
     args = parser.parse_args()
 
@@ -97,17 +108,34 @@ def main():
     data = pd.read_csv(args.filename + ".csv", header=None).values
 
     K = args.k
+    method = args.m
     n = data.shape[0]
 
+    # FIXME:乱数シード
+    # np.random.seed(100)
+
     if data.shape[1] == 1:
-        mu = (np.max(data[:, 0]) - np.min(data[:, 0])) * np.random.rand(K, 1) + np.min(
-            data[:, 0]
-        )
+        start = time.time()
+        if method == "r":
+            mu = (np.max(data[:, 0]) - np.min(data[:, 0])) * np.random.rand(
+                K, 1
+            ) + np.min(data[:, 0])
+        elif method == "km":
+            model = KMeans(n_clusters=K, init="random")
+            model.fit(data)
+            mu = model.cluster_centers_
+        elif method == "km+":
+            model = KMeans(n_clusters=K)
+            model.fit(data)
+            mu = model.cluster_centers_
         sig = np.random.rand(K, 1, 1)
         pi = np.zeros(K)
         pi += 1 / K
         gmm = GMM(data, K, mu, sig, pi)
         pi, mu, sig, lh_list, iter = gmm.iteration(I=100, e=0.01)
+
+        calc_time = time.time() - start
+        print(f"calc_time({method}): {calc_time:.5f}")
 
         xx = np.linspace(np.min(data[:, 0]), np.max(data[:, 0]), n)
         pdfs = np.zeros((n, K))
@@ -161,23 +189,38 @@ def main():
         )
         plt.plot(lh_list[:, 0], lh_list[:, 1])
         plt.savefig(f"{args.filename}_lh.png")
-        plt.show()
+        # plt.show()
 
     elif data.shape[1] == 2:
-        # FIXME: k - meansで決める
-        mu_x = (np.max(data[:, 0]) - np.min(data[:, 0])) * np.random.rand(
-            K, 1
-        ) + np.min(data[:, 0])
-        mu_y = (np.max(data[:, 1]) - np.min(data[:, 1])) * np.random.rand(
-            K, 1
-        ) + np.min(data[:, 1])
-        mu = np.hstack((mu_x, mu_y))
+        start = time.time()
+
+        if method == "r":
+            mu_x = (np.max(data[:, 0]) - np.min(data[:, 0])) * np.random.rand(
+                K, 1
+            ) + np.min(data[:, 0])
+            mu_y = (np.max(data[:, 1]) - np.min(data[:, 1])) * np.random.rand(
+                K, 1
+            ) + np.min(data[:, 1])
+            mu = np.hstack((mu_x, mu_y))
+        elif method == "km":
+            model = KMeans(n_clusters=K, init="random")
+            model.fit(data)
+            mu = model.cluster_centers_
+        elif method == "km+":
+            model = KMeans(n_clusters=K)
+            model.fit(data)
+            mu = model.cluster_centers_
+
         # -5~5の間でランダムな値の共分散
+        np.random.seed(1)
         sig = 10 * np.random.rand(K, 2, 2) - 5
         pi = np.zeros(K)
         pi += 1 / K
         gmm = GMM(data, K, mu, sig, pi)
         pi, mu, sig, lh_list, iter = gmm.iteration(I=100, e=0.01)
+
+        calc_time = time.time() - start
+        print(f"calc_time({method}): {calc_time:.5f}")
 
         fig = plt.figure()
         fig.add_subplot(
