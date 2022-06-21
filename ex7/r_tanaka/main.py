@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,9 +6,17 @@ from scipy.stats import norm
 
 
 def gaussian(x, mu, sigma):
-    # x.shape = (dim, )
+    """gaussian distribution
+
+    Args:
+        x (np.ndarray): input data. shape = (dim, ).
+        mu (np.ndarray): means of distribution. shape = (dim, ).
+        sigma (np.ndarray): variances of distribution. shape = (dim, dim).
+
+    Returns:
+        float: gaussian distribution
+    """
     dim = len(x)
-    # sigma.shape = (dim, dim)
     sigma_det = np.linalg.det(sigma)
     sigma_inv = np.linalg.inv(sigma)  # shape = (dim, dim)
     a = ((2 * np.pi) ** (0.5 * dim)) * (sigma_det ** 0.5)
@@ -17,7 +26,16 @@ def gaussian(x, mu, sigma):
 
 
 def calc_gaussian(input, mu, sigma):
-    # input.shape = (n, dim)
+    """calculate gaussian distribution
+
+    Args:
+        input (np.ndarray): input data. shape = (n, dim).
+        mu (np.ndarray): means of distribution. shape = (dim, ).
+        sigma (np.ndarray): variances of distribution. shape = (dim, dim).
+
+    Returns:
+        np.ndarray: gaussian distribution. shape = (n, ).
+    """
     n = len(input)
 
     gaussians = np.zeros(n)
@@ -28,6 +46,17 @@ def calc_gaussian(input, mu, sigma):
 
 
 def calc_mixture_gaussian(input, pi, mu, sigma):
+    """calculate mixture gaussian distribution
+
+    Args:
+        input (np.ndarray): input data. shape = (n, dim).
+        pi (np.ndarray): mixing coefficients of each class. shape = (k, ). 
+        mu (np.ndarray): means of distributions. shape = (k, dim).
+        sigma (np.ndarray): variances of distributions. shape = (k, dim, dim).
+
+    Returns:
+        np.ndarray: mixture gaussian distribution. shape = (k, n).
+    """
     n = len(input)
     k = len(pi)
 
@@ -39,18 +68,41 @@ def calc_mixture_gaussian(input, pi, mu, sigma):
 
 
 def calc_loglikelihood(input, pi, mu, sigma):
-    n = len(input)
-    mix_gaussian = calc_mixture_gaussian(input, pi, mu, sigma)
-    sum_mix_gaussian = np.sum(mix_gaussian, axis=0)
+    """calculate log-likelihood
 
-    loglikelihood = 0
-    for i in range(n):
-        loglikelihood += np.log(sum_mix_gaussian[i])
+    Args:
+        input (np.ndarray): input data. shape = (n, dim).
+        pi (np.ndarray): mixing coefficients of each class. shape = (k, ). 
+        mu (np.ndarray): means of distributions. shape = (k, dim).
+        sigma (np.ndarray): variances of distributions. shape = (k, dim, dim).
+
+    Returns:
+        float: log-likelihood
+    """
+    mix_gaussian = calc_mixture_gaussian(input, pi, mu, sigma)  # shape = (k, n)
+    sum_mix_gaussian = np.sum(mix_gaussian, axis=0)  # shape = (n, )
+    loglikelihood = np.sum(np.log(sum_mix_gaussian))
 
     return loglikelihood
 
 
 def em_algorithm(input, pi, mu, sigma, epsilon=0.001, max_iter=50):
+    """calculate EM-algorithm
+
+    Args:
+        input (np.ndarray): input data. shape = (n, dim).
+        pi (np.ndarray): mixing coefficients of each class. shape = (k, ).
+        mu (np.ndarray): means of distributions. shape = (k, dim).
+        sigma (np.ndarray): variances of distributions. shape = (k, dim, dim).
+        epsilon (float, optional): convergence condition. Defaults to 0.001.
+        max_iter (int, optional): max iteration number. Defaults to 50.
+
+    Returns:
+        np.ndarray: log-likelihoods.
+        np.ndarray: updated mixing coefficients of each class.
+        np.ndarray: updated means of distributions.
+        np.ndarray: updeted variances of distributions.
+    """
     n = len(input)
     loglikelihood = []
     loglikelihood.append(calc_loglikelihood(input, pi, mu, sigma))
@@ -59,8 +111,7 @@ def em_algorithm(input, pi, mu, sigma, epsilon=0.001, max_iter=50):
         # E step
         mix_gaussian = calc_mixture_gaussian(input, pi, mu, sigma)  # shape = (k, n)
         sum_mix_gaussian = np.sum(mix_gaussian, axis=0)  # shape = (n, )
-        # (k, n) <- (k, n) / (1, n)
-        gamma = mix_gaussian / sum_mix_gaussian[np.newaxis, :]
+        gamma = mix_gaussian / sum_mix_gaussian[np.newaxis, :]  # (k, n) <- (k, n) / (1, n)
 
         # M step
         # update n_k
@@ -89,6 +140,48 @@ def em_algorithm(input, pi, mu, sigma, epsilon=0.001, max_iter=50):
     return loglikelihood, pi, mu, sigma
 
 
+def k_means(input, k, max_iter=500):
+    """k-means algorithm
+
+    Args:
+        X (np.ndarray): input data
+        k (int): number of cluster
+        max_iter (int, optional): maximum of iteration. Defaults to 300.
+
+    Returns:
+        np.ndarray: the data of clusters
+        np.ndarray: the data of centroids
+    """
+    input_size, n_features = input.shape
+
+    # randomly initialize initial centroids
+    centroids = input[np.random.choice(input_size, k)]
+    # array for the new centroids
+    new_centroids = np.zeros((k, n_features))
+    # array to store the cluster information to which each data belongs
+    clusters = np.zeros(input_size)
+
+    for _ in range(max_iter):
+        # loop for all input data
+        for i in range(input_size):
+            # calculate the distance to each centroid from the data
+            distances = np.sum((centroids - input[i]) ** 2, axis=1)
+            # update the cluster based on distances
+            clusters[i] = np.argsort(distances)[0]
+
+        # recalculate centroid for all clusters
+        for j in range(k):
+            new_centroids[j] = input[clusters == j].mean(axis=0)
+
+        # break if centrois has not changed
+        if np.sum(new_centroids == centroids) == k:
+            print("break")
+            break
+        centroids = new_centroids
+
+    return centroids
+
+
 def main():
     # read csv files as DataFrame
     df_data1 = pd.read_csv("data1.csv", header=None)
@@ -101,7 +194,7 @@ def main():
     data3 = df_data3.to_numpy()
 
     # set drawing area
-    plt.rcParams["figure.figsize"] = (7, 7)
+    plt.rcParams["figure.figsize"] = (8, 10)
 
     # fitting data1
     # determine initial parameters for data1
@@ -137,7 +230,9 @@ def main():
     dim = data2.shape[1]
     k = 3
     pi = np.full(k, 1 / k)
-    mu = np.random.randn(k, dim)
+    centroids = k_means(data2, k)
+    mu = centroids
+    # mu = np.random.randn(k, dim)
     sigma = np.array([np.eye(dim) for _ in range(k)])
 
     # apply em-algorithm to data2
@@ -145,6 +240,8 @@ def main():
 
     # set drawing area for data2
     fig2, ax2 = plt.subplots(2, 1)
+    ax2[0] = plt.subplot2grid((3, 3), (0, 0), colspan=3)
+    ax2[1] = plt.subplot2grid((3, 3), (1, 0), rowspan=2, colspan=3)
     # plot log-likelihood
     ax2[0].plot(np.arange(0, len(loglikelihood2), 1), loglikelihood2, c='royalblue')
     ax2[0].set(title="data2 log-likelihood", xlabel="iteration number", ylabel="log-likelihood")
@@ -168,7 +265,9 @@ def main():
     dim = data3.shape[1]
     k = 3
     pi = np.full(k, 1 / k)
-    mu = np.random.randn(k, dim)
+    centroids = k_means(data3, k)
+    mu = centroids
+    # mu = np.random.randn(k, dim)
     sigma = np.array([np.eye(dim) for _ in range(k)])
 
     # apply em-algorithm to data3
@@ -176,6 +275,8 @@ def main():
 
     # set drawing area for data3
     fig3, ax3 = plt.subplots(2, 1)
+    ax3[0] = plt.subplot2grid((3, 3), (0, 0), colspan=3)
+    ax3[1] = plt.subplot2grid((3, 3), (1, 0), rowspan=2, colspan=3)
     # plot log-likelihood
     ax3[0].plot(np.arange(0, len(loglikelihood3), 1), loglikelihood3, c='royalblue')
     ax3[0].set(title="data3 log-likelihood", xlabel="iteration number", ylabel="log-likelihood")
