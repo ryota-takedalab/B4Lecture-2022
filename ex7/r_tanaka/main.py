@@ -50,7 +50,7 @@ def calc_mixture_gaussian(input, pi, mu, sigma):
 
     Args:
         input (np.ndarray): input data. shape = (n, dim).
-        pi (np.ndarray): mixing coefficients of each class. shape = (k, ). 
+        pi (np.ndarray): mixing coefficients of each class. shape = (k, ).
         mu (np.ndarray): means of distributions. shape = (k, dim).
         sigma (np.ndarray): variances of distributions. shape = (k, dim, dim).
 
@@ -72,7 +72,7 @@ def calc_loglikelihood(input, pi, mu, sigma):
 
     Args:
         input (np.ndarray): input data. shape = (n, dim).
-        pi (np.ndarray): mixing coefficients of each class. shape = (k, ). 
+        pi (np.ndarray): mixing coefficients of each class. shape = (k, ).
         mu (np.ndarray): means of distributions. shape = (k, dim).
         sigma (np.ndarray): variances of distributions. shape = (k, dim, dim).
 
@@ -183,124 +183,85 @@ def k_means(input, k, max_iter=500):
 
 
 def main():
+    fname = args.fname
+    k = args.mixed_number
+
     # read csv files as DataFrame
-    df_data1 = pd.read_csv("data1.csv", header=None)
-    df_data2 = pd.read_csv("data2.csv", header=None)
-    df_data3 = pd.read_csv("data3.csv", header=None)
+    df_data = pd.read_csv(fname + ".csv", header=None)
 
     # convert DataFrame form to array form
-    data1 = df_data1.to_numpy()
-    data2 = df_data2.to_numpy()
-    data3 = df_data3.to_numpy()
+    data = df_data.to_numpy()
 
     # set drawing area
     plt.rcParams["figure.figsize"] = (8, 10)
 
-    # fitting data1
-    # determine initial parameters for data1
-    n = data1.shape[0]
-    dim = data1.shape[1]
-    k = 2
+    # fitting data
+    # determine initial parameters
+    n = data.shape[0]
+    dim = data.shape[1]
     pi = np.full(k, 1 / k)
     mu = np.random.randn(k, dim)
     sigma = np.array([np.eye(dim) for _ in range(k)])
 
-    # apply em-algorithm to data1
-    loglikelihood1, pi1, mu1, sigma1 = em_algorithm(data1, pi, mu, sigma)
+    # run em-algorithm & update parameters
+    loglikelihood, pi, mu, sigma = em_algorithm(data, pi, mu, sigma)
 
-    # set drawing area for data1
-    fig1, ax1 = plt.subplots(2, 1)
-    # plot log-likelihood
-    ax1[0].plot(np.arange(0, len(loglikelihood1), 1), loglikelihood1, c='royalblue')
-    ax1[0].set(title="data1 log-likelihood", xlabel="iteration number", ylabel="log-likelihood")
-    # plot scatter & mixture gaussian distribution
-    x = np.linspace(np.min(data1[:, 0]), np.max(data1[:, 0]), n)
-    pdfs = np.zeros((n, k))
-    for i in range(k):
-        pdfs[:, i] = pi1[i] * norm.pdf(x, loc=mu1[i], scale=sigma1[i])
-    ax1[1].scatter(data1, np.zeros(len(data1)), facecolor="None", edgecolors="royalblue", label="data1 sample")
-    ax1[1].scatter(mu1, np.zeros(len(mu1)), s=100, marker="*", c="gold", label="centroids")
-    ax1[1].plot(x, np.sum(pdfs, axis=1), label="GMM", c='royalblue')
-    ax1[1].set(title="GMM data1", xlabel="data1", ylabel="mixture gaussian distribution")
-    ax1[1].legend()
+    if dim == 1:
+        # set drawing area for data1
+        fig, ax = plt.subplots(2, 1)
+        # plot log-likelihood
+        ax[0].plot(np.arange(0, len(loglikelihood), 1), loglikelihood, c='royalblue')
+        ax[0].set(title="data1 log-likelihood", xlabel="iteration number", ylabel="log-likelihood")
+        # plot scatter & mixture gaussian distribution
+        x = np.linspace(np.min(data[:, 0]), np.max(data[:, 0]), n)
+        pdfs = np.zeros((n, k))
+        for i in range(k):
+            pdfs[:, i] = pi[i] * norm.pdf(x, loc=mu[i], scale=sigma[i])
+        ax[1].scatter(data, np.zeros(len(data)), facecolor="None", edgecolors="royalblue", label="data1 sample")
+        ax[1].scatter(mu, np.zeros(len(mu)), s=100, marker="*", c="gold", label="centroids")
+        ax[1].plot(x, np.sum(pdfs, axis=1), label="GMM", c='royalblue')
+        ax[1].set(title="GMM data1", xlabel="data1", ylabel="mixture gaussian distribution")
+        ax[1].legend()
 
-    # fitting data2
-    # determine initial parameters for data2
-    n = data2.shape[0]
-    dim = data2.shape[1]
-    k = 3
-    pi = np.full(k, 1 / k)
-    centroids = k_means(data2, k)
-    mu = centroids
-    # mu = np.random.randn(k, dim)
-    sigma = np.array([np.eye(dim) for _ in range(k)])
+        fig.tight_layout()
+        fig.savefig("data1.png")
 
-    # apply em-algorithm to data2
-    loglikelihood2, pi2, mu2, sigma2 = em_algorithm(data2, pi, mu, sigma)
+    if dim == 2:
+        # set drawing area for data2&3
+        fig, ax = plt.subplots(2, 1)
+        ax[0] = plt.subplot2grid((3, 3), (0, 0), colspan=3)
+        ax[1] = plt.subplot2grid((3, 3), (1, 0), rowspan=2, colspan=3)
+        # plot log-likelihood
+        ax[0].plot(np.arange(0, len(loglikelihood), 1), loglikelihood, c='royalblue')
+        ax[0].set(title=fname + " log-likelihood", xlabel="iteration number", ylabel="log-likelihood")
+        # plot scatter & mixture gaussian distribution
+        x = np.linspace(np.min(data[:, 0]), np.max(data[:, 0]), n)
+        y = np.linspace(np.min(data[:, 1]), np.max(data[:, 1]), n)
+        X, Y = np.meshgrid(x, y)
+        lines = np.dstack((X, Y))
+        Z = np.zeros((n, n))
+        for i in range(n):
+            Z[i] = np.array([np.sum(calc_mixture_gaussian(lines[i, :], pi, mu, sigma), axis=0)])
+        ax[1].scatter(mu[:, 0], mu[:, 1], s=100, marker="*", c="r", label="centroid")
+        ax[1].contour(X, Y, Z, cmap="rainbow")
+        ax[1].scatter(df_data[0], df_data[1], facecolor="None", edgecolors="royalblue", label=fname + " sample")
+        ax[1].set(title=fname)
+        ax[1].legend()
 
-    # set drawing area for data2
-    fig2, ax2 = plt.subplots(2, 1)
-    ax2[0] = plt.subplot2grid((3, 3), (0, 0), colspan=3)
-    ax2[1] = plt.subplot2grid((3, 3), (1, 0), rowspan=2, colspan=3)
-    # plot log-likelihood
-    ax2[0].plot(np.arange(0, len(loglikelihood2), 1), loglikelihood2, c='royalblue')
-    ax2[0].set(title="data2 log-likelihood", xlabel="iteration number", ylabel="log-likelihood")
-    # plot scatter & mixture gaussian distribution
-    x = np.linspace(np.min(data2[:, 0]), np.max(data2[:, 0]), n)
-    y = np.linspace(np.min(data2[:, 1]), np.max(data2[:, 1]), n)
-    X, Y = np.meshgrid(x, y)
-    lines = np.dstack((X, Y))
-    Z = np.zeros((n, n))
-    for i in range(n):
-        Z[i] = np.array([np.sum(calc_mixture_gaussian(lines[i, :], pi2, mu2, sigma2), axis=0)])
-    ax2[1].scatter(mu2[:, 0], mu2[:, 1], s=100, marker="*", c="r", label="centroid")
-    ax2[1].contour(X, Y, Z, cmap="rainbow")
-    ax2[1].scatter(df_data2[0], df_data2[1], facecolor="None", edgecolors="royalblue", label="data2 sample")
-    ax2[1].set(title="data2")
-    ax2[1].legend()
-
-    # fitting data3
-    # determine initial parameters for data3
-    n = data3.shape[0]
-    dim = data3.shape[1]
-    k = 3
-    pi = np.full(k, 1 / k)
-    centroids = k_means(data3, k)
-    mu = centroids
-    # mu = np.random.randn(k, dim)
-    sigma = np.array([np.eye(dim) for _ in range(k)])
-
-    # apply em-algorithm to data3
-    loglikelihood3, pi3, mu3, sigma3 = em_algorithm(data2, pi, mu, sigma)
-
-    # set drawing area for data3
-    fig3, ax3 = plt.subplots(2, 1)
-    ax3[0] = plt.subplot2grid((3, 3), (0, 0), colspan=3)
-    ax3[1] = plt.subplot2grid((3, 3), (1, 0), rowspan=2, colspan=3)
-    # plot log-likelihood
-    ax3[0].plot(np.arange(0, len(loglikelihood3), 1), loglikelihood3, c='royalblue')
-    ax3[0].set(title="data3 log-likelihood", xlabel="iteration number", ylabel="log-likelihood")
-    # plot scatter & mixture gaussian distribution
-    x = np.linspace(np.min(data3[:, 0]), np.max(data3[:, 0]), n)
-    y = np.linspace(np.min(data3[:, 1]), np.max(data3[:, 1]), n)
-    X, Y = np.meshgrid(x, y)
-    lines = np.dstack((X, Y))
-    Z = np.zeros((n, n))
-    for i in range(n):
-        Z[i] = np.array([np.sum(calc_mixture_gaussian(lines[i, :], pi3, mu3, sigma3), axis=0)])
-    ax3[1].scatter(mu3[:, 0], mu3[:, 1], s=100, marker="*", c="r", label="centroid")
-    ax3[1].contour(X, Y, Z, cmap="rainbow")
-    ax3[1].scatter(df_data3[0], df_data3[1], facecolor="None", edgecolors="royalblue", label="data3 sample")
-    ax3[1].set(title="data3")
-    ax3[1].legend()
-
-    fig1.tight_layout()
-    fig2.tight_layout()
-    fig3.tight_layout()
-    fig1.savefig("data1.png")
-    fig2.savefig("data2.png")
-    fig3.savefig("data3.png")
+        fig.tight_layout()
+        fig.savefig(fname + ".png")
 
 
 if __name__ == "__main__":
+    # process args
+    parser = argparse.ArgumentParser(description="Fitting with GMM.")
+    parser.add_argument("fname", type=str, help="Load filename (.csv)")
+    parser.add_argument(
+        "-k",
+        "--mixed_number",
+        type=int,
+        help="mixed number of GMM (optional, Default=2)",
+        default=2,
+    )
+    args = parser.parse_args()
     main()
