@@ -8,25 +8,39 @@ from sklearn.cluster import KMeans
 
 
 class GMM:
-    def __init__(self, data, K, mu, sigma, pi) -> None:
-        self.data = data
-        self.N = data.shape[0]
-        self.D = data.shape[1]
+    def __init__(self, N, D, K, mu, sigma, pi) -> None:
+        """
+
+        Args:
+            N(int): data size
+            D (int): dimension
+            K (int): cluster num
+            mu (ndarray, shape=(K, D)): mean value
+            sigma (ndarray, shape=(K, D, D)): covariance
+            pi (ndarray, shape=(K, )): mixing coefficient
+        """
+        # self.data = data
+        self.N = N
+        self.D = D
         self.K = K
         self.mu = mu
         self.sigma = sigma
         self.pi = pi
 
-    def gaus(self):
+    def gaus(self, data):
+        """calculate gaussian value
+
+        Args:
+            data (ndarray, shape=(N, D)): input data
+
+        Returns:
+            ndarray, shape=(K, N): gaussian value
+        """
         # 正規分布の値の取得
         # (N, D) - (k, D) ->(1, N, D) - (k, 1, D) = (k, N, D)
-        self.diff_data = self.data[np.newaxis, :, :] - self.mu[:, np.newaxis, :]
+        diff_data = data[np.newaxis, :, :] - self.mu[:, np.newaxis, :]
         # (k, N, N)
-        tmp = (
-            self.diff_data
-            @ np.linalg.inv(self.sigma)
-            @ self.diff_data.transpose(0, 2, 1)
-        )
+        tmp = diff_data @ np.linalg.inv(self.sigma) @ diff_data.transpose(0, 2, 1)
         # 分子
         nume = np.exp(-np.diagonal(tmp, axis1=1, axis2=2,) / 2.0)
         # 分母
@@ -36,35 +50,34 @@ class GMM:
 
         return nume / deno
 
-    def calc_gamma(self):
-        # 負担率の計算
-        gam = self.pi.reshape(-1, 1) * self.gaus()
-        gam /= np.sum(gam, axis=0)
-        self.gamma = gam
+    def iteration(self, data, I=100, e=0.01):
+        """calculate likelihood until ( change < e )
 
-    def update_parames(self):
-        # pi, mu, sigmaの更新
-        N_k = np.sum(self.gamma, axis=1)
-        self.pi = N_k / self.N
-        self.mu = np.sum(
-            self.gamma[:, :, np.newaxis] * self.data, axis=1
-        ) / N_k.reshape(-1, 1)
-        self.sigma = (
-            self.gamma[:, np.newaxis, :]
-            * self.diff_data.transpose(0, 2, 1)
-            @ self.diff_data
-        ) / N_k.reshape(-1, 1, 1)
+        Args:
+            data (ndarray, shape=(N, D)): input data
+            I (int, optional): max iteration times. Defaults to 100.
+            e (float, optional): threshold. Defaults to 0.01.
+        
+        Returns:
+            ndarray(K, ) : pi
+            ndarray(K, D) : mu
+            ndarray(K, D, D) : sigma
+            ndarray(iteration, 2) : likelihood list
+            int : iteration
+        """
 
-    def iteration(self, I=100, e=0.01):
         # ε以下になるか、100回計算するまで尤度を更新
         lh = 0
         lh_list = np.empty((0, 2))
         for i in range(I):
             # 負担率ガンマの計算
-            self.calc_gamma()
+            gam = self.pi.reshape(-1, 1) * self.gaus(data)
+            gam /= np.sum(gam, axis=0)
+            self.gamma = gam
+
             # 対数尤度を計算
             lh_new = np.sum(
-                np.log(np.sum(self.pi.reshape(-1, 1) * self.gaus(), axis=0))
+                np.log(np.sum(self.pi.reshape(-1, 1) * self.gaus(data), axis=0))
             )
             lh_list = np.vstack([lh_list, [i, lh_new]])
             # 対数尤度の変化量
@@ -73,21 +86,22 @@ class GMM:
                 print(f"Iteration is finished {i+1} iter.")
                 break
             lh = lh_new
-            self.update_parames()
+
+            # pi, mu, sigmaの更新
+            N_k = np.sum(self.gamma, axis=1)
+
+            self.pi = N_k / self.N
+
+            self.mu = np.sum(self.gamma[:, :, np.newaxis] * data, axis=1) / N_k.reshape(
+                -1, 1
+            )
+
+            diff_data = data[np.newaxis, :, :] - self.mu[:, np.newaxis, :]
+            self.sigma = (
+                self.gamma[:, np.newaxis, :] * diff_data.transpose(0, 2, 1) @ diff_data
+            ) / N_k.reshape(-1, 1, 1)
+
         return self.pi, self.mu, self.sigma, lh_list, i + 1
-
-
-def gaus_pi(data, pi, mu, sigma, D):
-    # pi * 正規分布の値の取得
-    # (N, D) - (k, D) ->(1, N, D) - (k, 1, D) = (k, N, D)
-    diff_data = data[np.newaxis, :, :] - mu[:, np.newaxis, :]
-    # (k, N, N)
-    tmp = diff_data @ np.linalg.inv(sigma) @ diff_data.transpose(0, 2, 1)
-    # 分子
-    nume = np.exp(-np.diagonal(tmp, axis1=1, axis2=2,) / 2.0)
-    # 分母
-    deno = np.sqrt(((2 * np.pi) ** D) * np.abs(np.linalg.det(sigma))).reshape(-1, 1)
-    return (nume / deno) * pi.reshape(-1, 1)
 
 
 def main():
@@ -114,24 +128,50 @@ def main():
     if data.shape[1] == 1:
         start = time.time()
         if method == "r":
+            # 平均値
             mu = (np.max(data[:, 0]) - np.min(data[:, 0])) * np.random.rand(
                 K, 1
             ) + np.min(data[:, 0])
+
+            # 0~1のランダムで分散
+            sig = np.random.rand(K, 1, 1)
+
+            # 混合係数
+            pi = np.zeros(K)
+            pi += 1 / K
         elif method == "km":
             model = KMeans(n_clusters=K, init="random")
-            model.fit(data)
+            fit_data = model.fit_predict(data)
+
+            # 平均値
             mu = model.cluster_centers_
+
+            # 分散
+            index_data = [np.where(fit_data == i) for i in range(K)]
+            sig = [[[np.var(data[index_data[i]])]] for i in range(K)]
+
+            # 混合係数
+            pi = np.zeros(K)
+            for k in range(K):
+                pi[k] = index_data[k][0].shape[0] / data.shape[0]
         elif method == "km+":
             model = KMeans(n_clusters=K)
-            model.fit(data)
+            fit_data = model.fit_predict(data)
+
+            # 平均値
             mu = model.cluster_centers_
-        # 0~1のランダムで分散
-        np.random.seed(1)
-        sig = np.random.rand(K, 1, 1)
-        pi = np.zeros(K)
-        pi += 1 / K
-        gmm = GMM(data, K, mu, sig, pi)
-        pi, mu, sig, lh_list, iter = gmm.iteration(I=100, e=0.01)
+
+            # 分散
+            index_data = [np.where(fit_data == i) for i in range(K)]
+            sig = [[[np.var(data[index_data[i]])]] for i in range(K)]
+
+            # 混合係数
+            pi = np.zeros(K)
+            for k in range(K):
+                pi[k] = index_data[k][0].shape[0] / data.shape[0]
+
+        gmm = GMM(data.shape[0], data.shape[1], K, mu, sig, pi)
+        pi, mu, sig, lh_list, iter = gmm.iteration(data, I=100, e=0.01)
 
         calc_time = time.time() - start
         print(f"calc_time({method}): {calc_time:.5f}")
@@ -186,7 +226,7 @@ def main():
             xlabel="Iteration",
             ylabel="Log Likelihood",
         )
-        plt.plot(lh_list[1:, 0], lh_list[1:, 1])
+        plt.plot(lh_list[:, 0], lh_list[:, 1])
         plt.savefig(f"{args.filename}_lh.png")
         plt.show()
 
@@ -201,22 +241,43 @@ def main():
                 K, 1
             ) + np.min(data[:, 1])
             mu = np.hstack((mu_x, mu_y))
+
+            # 単位行列 * 正の乱数
+            sig = np.random.rand(K, 2, 2) * np.identity(2)
+
+            pi = np.zeros(K)
+            pi += 1 / K
         elif method == "km":
             model = KMeans(n_clusters=K, init="random")
-            model.fit(data)
-            mu = model.cluster_centers_
-        elif method == "km+":
-            model = KMeans(n_clusters=K)
-            model.fit(data)
+            fit_data = model.fit_predict(data)
             mu = model.cluster_centers_
 
-        # -5~5の間でランダムな値の共分散
-        np.random.seed(1)
-        sig = 10 * np.random.rand(K, 2, 2) - 5
-        pi = np.zeros(K)
-        pi += 1 / K
-        gmm = GMM(data, K, mu, sig, pi)
-        pi, mu, sig, lh_list, iter = gmm.iteration(I=100, e=0.01)
+            # 共分散
+            index_data = [np.where(fit_data == i) for i in range(K)]
+            sig = [[np.cov(data[index_data[i]].T)] for i in range(K)]
+            sig = np.squeeze(sig)
+
+            # 混合係数
+            pi = np.zeros(K)
+            for k in range(K):
+                pi[k] = index_data[k][0].shape[0] / data.shape[0]
+        elif method == "km+":
+            model = KMeans(n_clusters=K)
+            fit_data = model.fit_predict(data)
+            mu = model.cluster_centers_
+
+            # 共分散
+            index_data = [np.where(fit_data == i) for i in range(K)]
+            sig = [[np.cov(data[index_data[i]].T)] for i in range(K)]
+            sig = np.squeeze(sig)
+
+            # 混合係数
+            pi = np.zeros(K)
+            for k in range(K):
+                pi[k] = index_data[k][0].shape[0] / data.shape[0]
+
+        gmm = GMM(data.shape[0], data.shape[1], K, mu, sig, pi)
+        pi, mu, sig, lh_list, iter = gmm.iteration(data, I=100, e=0.01)
 
         calc_time = time.time() - start
         print(f"calc_time({method}): {calc_time:.5f}")
@@ -243,7 +304,7 @@ def main():
         lines = np.dstack((X, Y))
         pos = 0
         for k in range(K):
-            pos += np.array([gaus_pi(line, pi, mu, sig, 2)[k] for line in lines])
+            pos += np.array([pi[k] * gmm.gaus(line)[k] for line in lines])
 
         plt.contour(X, Y, pos, cmap="rainbow")
         plt.legend()
@@ -258,10 +319,11 @@ def main():
             xlabel="Iteration",
             ylabel="Log Likelihood",
         )
-        plt.plot(lh_list[1:, 0], lh_list[1:, 1])
+        plt.plot(lh_list[:, 0], lh_list[:, 1])
         plt.savefig(f"{args.filename}_lh.png")
         plt.show()
 
 
 if __name__ == "__main__":
     main()
+
