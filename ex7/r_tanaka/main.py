@@ -3,6 +3,21 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
+from functools import wraps
+import time
+
+
+def stop_watch(func):
+    @wraps(func)
+    def wrapper(*args, **kargs):
+        start = time.time()
+        result = func(*args, **kargs)
+        process_time = round(time.time() - start, 4)
+        print("")
+        print("--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--")
+        print(f"It took {process_time} sec to process {func.__name__}")
+        return result
+    return wrapper
 
 
 def gaussian(x, mu, sigma):
@@ -86,6 +101,7 @@ def calc_loglikelihood(input, pi, mu, sigma):
     return loglikelihood
 
 
+@stop_watch
 def em_algorithm(input, pi, mu, sigma, epsilon=0.001, max_iter=50):
     """calculate EM-algorithm
 
@@ -206,6 +222,20 @@ def main():
     # run em-algorithm & update parameters
     loglikelihood, pi, mu, sigma = em_algorithm(data, pi, mu, sigma)
 
+    print("--------------------------------------------------------------")
+    print("EM algorithm was iterated %i times" % len(loglikelihood))
+    print("--------------------------------------------------------------")
+    print("π　(mixed number) is: ")
+    print(pi)
+    print("")
+    print("μ (means of distributions) is: ")
+    print(mu)
+    print("")
+    print("Σ (variances of distributions) is: ")
+    print(sigma)
+    print("--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--")
+    print("")
+
     if dim == 1:
         # set drawing area for data1
         fig, ax = plt.subplots(2, 1)
@@ -218,8 +248,8 @@ def main():
         for i in range(k):
             pdfs[:, i] = pi[i] * norm.pdf(x, loc=mu[i], scale=sigma[i])
         ax[1].scatter(data, np.zeros(len(data)), facecolor="None", edgecolors="royalblue", label="data1 sample")
-        ax[1].scatter(mu, np.zeros(len(mu)), s=100, marker="*", c="gold", label="centroids")
-        ax[1].plot(x, np.sum(pdfs, axis=1), label="GMM", c='royalblue')
+        ax[1].scatter(mu, np.zeros(len(mu)), s=100, marker="*", c="r", label="centroids")
+        ax[1].plot(x, np.sum(pdfs, axis=1), label="GMM", c='lime')
         ax[1].set(title="GMM data1", xlabel="data1", ylabel="mixture gaussian distribution")
         ax[1].legend()
 
