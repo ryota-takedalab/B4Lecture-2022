@@ -13,7 +13,6 @@ def stop_watch(func):
         start = time.time()
         result = func(*args, **kargs)
         process_time = round(time.time() - start, 4)
-        print("")
         print("--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--")
         print(f"It took {process_time} sec to process {func.__name__}")
         return result
@@ -132,6 +131,8 @@ def em_algorithm(input, pi, mu, sigma, epsilon=0.001, max_iter=50):
         # M step
         # update n_k
         n_k = np.sum(gamma, axis=1)  # shape = (k, )
+        # update pi
+        pi = n_k / n
 
         # update mu
         mu = (gamma @ input) / n_k[:, np.newaxis]  # shape = (k, dim)
@@ -143,9 +144,6 @@ def em_algorithm(input, pi, mu, sigma, epsilon=0.001, max_iter=50):
                 sigma[k] += gamma[k][j] * (input[j] - mu[k])[:, np.newaxis] @ (input[j] - mu[k])[np.newaxis, :]
         sigma /= n_k[:, np.newaxis, np.newaxis]  # (k, dim, dim) <- (k, dim, dim) / (k, 1, 1)
 
-        # update pi
-        pi = n_k / n
-
         new_loglikelihood = calc_loglikelihood(input, pi, mu, sigma)
         loglikelihood.append(new_loglikelihood)
 
@@ -156,6 +154,7 @@ def em_algorithm(input, pi, mu, sigma, epsilon=0.001, max_iter=50):
     return loglikelihood, pi, mu, sigma
 
 
+@stop_watch
 def k_means(input, k, max_iter=500):
     """k-means algorithm
 
@@ -191,7 +190,6 @@ def k_means(input, k, max_iter=500):
 
         # break if centrois has not changed
         if np.sum(new_centroids == centroids) == k:
-            print("break")
             break
         centroids = new_centroids
 
@@ -216,7 +214,8 @@ def main():
     n = data.shape[0]
     dim = data.shape[1]
     pi = np.full(k, 1 / k)
-    mu = np.random.randn(k, dim)
+    # mu = np.random.randn(k, dim)
+    mu = k_means(data, k)
     sigma = np.array([np.eye(dim) for _ in range(k)])
 
     # run em-algorithm & update parameters
