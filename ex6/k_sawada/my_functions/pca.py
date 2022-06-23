@@ -58,13 +58,13 @@ def dimension_compress(data, primal_component, variances,
         dimension = data.shape[1]
     
     converted = np.empty((0, len(data)))
-    total_contortion_rate = 0
+    total_contribution_rate = 0
     total_contribution_rate_histories = []
     
     # convert with primal components
     for d in range(dimension):
-        if total_contortion_rate < contribution_rate:
+        if total_contribution_rate < contribution_rate:
             converted = np.append(converted, [data @ primal_component[d]], axis=0)
-        total_contortion_rate += variances[d] / np.sum(variances)
-        total_contribution_rate_histories.append(total_contortion_rate)
+        total_contribution_rate += variances[d] / np.sum(variances)
+        total_contribution_rate_histories.append(total_contribution_rate)
     return converted.T, total_contribution_rate_histories
