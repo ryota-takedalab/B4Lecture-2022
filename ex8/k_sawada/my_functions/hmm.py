@@ -42,8 +42,8 @@ class HMM:
         
         # recursion stage
         for t in range(1, length):
-            alpha[t] = (self.transition_probability @
-                        alpha[t - 1].reshape((self.states, 1))).flatten() * \
+            alpha[t] = (alpha[t - 1].reshape((1, self.states)) @
+                        self.transition_probability).flatten() * \
                 self.output_probability[:, outputs[t]]
         return np.sum(alpha[-1])
     
@@ -60,23 +60,23 @@ class HMM:
                 likelihoods
         """
         length = len(outputs)
-        psi_probabiolity = np.zeros((length, self.states))
+        psi_probability = np.zeros((length, self.states))
         psi_states = np.zeros((length, self.states))
 
         # base stage
-        psi_probabiolity[0] = self.initial_state_probability * \
+        psi_probability[0] = self.initial_state_probability * \
             self.output_probability[:, outputs[0]]
         # psi_states[0] is already zeros
 
         # recursion stage
         for t in range(1, length):
-            psi_probabiolity[t] = \
+            psi_probability[t] = \
                 np.max(
                     self.transition_probability *
-                    psi_probabiolity[t - 1].reshape(self.states, 1), axis=1) * \
+                    psi_probability[t - 1].reshape(self.states, 1), axis=0) * \
                 self.output_probability[:, [outputs[t]]].flatten()
             psi_states[t] = \
                 np.argmax(
                     self.transition_probability *
-                    psi_probabiolity[t - 1].reshape(self.states, 1), axis=1)
-        return np.max(psi_probabiolity[-1])
+                    psi_probability[t - 1].reshape(self.states, 1), axis=0)
+        return np.max(psi_probability[-1])
