@@ -84,6 +84,7 @@ def run_forward_algorithm(output, PI, A, B):
     """
     predict = np.zeros(len(output))
 
+    # 各出力系列に対してHMMの種類を予測
     for k in range(len(output)):
         predict[k] = forward_algorithm(output[k], PI, A, B)
 
@@ -152,6 +153,7 @@ def run_viterbi_algorithm(output, PI, A, B):
     """
     predict = np.zeros(len(output))
 
+    # 各出力系列に対してHMMの種類を予測
     for k in range(len(output)):
         predict[k] = viterbi_algorithm(output[k], PI, A, B)
 
@@ -205,7 +207,7 @@ def main():
     plt.xlabel("Predicted model")
     plt.ylabel("Actual model")
     fig_vtb.tight_layout()
-    fig_vtb.savefig(fname + "cm_vtb.png")
+    fig_vtb.savefig(fname + "_cm_vtb.png")
 
 
 if __name__ == "__main__":
