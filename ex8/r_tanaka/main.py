@@ -185,29 +185,32 @@ def main():
     A = np.array(data["models"]["A"])
     B = np.array(data["models"]["B"])
 
+    # set plot area
+    plt.rcParams["figure.figsize"] = (10, 6)
+    fig = plt.figure()
+
     # predict HMM by forward algorithm
     predict_fwd = run_forward_algorithm(output, PI, A, B)
     acc_fwd = accuracy_score(answer_models, predict_fwd) * 100
-    fig_fwd = plt.figure()
+    plt.subplot(121)
     cm_fwd = confusion_matrix(answer_models, predict_fwd)
-    sns.heatmap(cm_fwd, annot=True, cmap='Blues')
-    fig_fwd.suptitle(f"{fname} Forward Algorithm\n(Acc. {acc_fwd:.1f}%)")
+    sns.heatmap(cm_fwd, annot=True, cmap='Blues', cbar=False, square=True)
+    plt.title(f"{fname} Forward Algorithm\n(Acc. {acc_fwd:.1f}%)")
     plt.xlabel("Predicted model")
     plt.ylabel("Actual model")
-    fig_fwd.tight_layout()
-    fig_fwd.savefig(fname + "_cm_fwd.png")
 
     # predict HMM by viterbi algorithm
     predict_vtb = run_viterbi_algorithm(output, PI, A, B)
     acc_vtb = accuracy_score(answer_models, predict_vtb) * 100
-    fig_vtb = plt.figure()
+    plt.subplot(122)
     cm_vtb = confusion_matrix(answer_models, predict_vtb)
-    sns.heatmap(cm_vtb, annot=True, cmap='Blues')
-    fig_vtb.suptitle(f"{fname} Viterbi Algorithm\n(Acc. {acc_vtb:.1f}%)")
+    sns.heatmap(cm_vtb, annot=True, cmap='Blues', cbar=False, square=True)
+    plt.title(f"{fname} Viterbi Algorithm\n(Acc. {acc_vtb:.1f}%)")
     plt.xlabel("Predicted model")
     plt.ylabel("Actual model")
-    fig_vtb.tight_layout()
-    fig_vtb.savefig(fname + "_cm_vtb.png")
+
+    fig.tight_layout()
+    fig.savefig(fname + "_cm.png")
 
 
 if __name__ == "__main__":
