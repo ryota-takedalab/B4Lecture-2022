@@ -1,6 +1,7 @@
 import argparse
 import pickle
 import time
+from turtle import title
 
 import numpy as np
 import seaborn as sns
@@ -47,26 +48,33 @@ def main():
     v_models = hmm.viterbi_algorithm()
     v_end = time.time()
     v_cm = hmm.calc_cm(v_models)
+    # v_cm.rename(columns=lambda s: s + 1, index=lambda s: s + 1)
     v_acc = hmm.calc_accuracy(v_models)
+    # print(v_cm.index)  # RangeIndex(start=0, stop=5, step=1)
 
     # plot
-    fig = plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=(10, 6))
 
     ax1 = fig.add_subplot(1, 2, 1)
     sns.heatmap(f_cm, cmap="binary", annot=True, cbar=False, square=True, ax=ax1)
-    ax1.set(
-        xlabel="Predicted model",
-        ylabel="Actual model",
-        title=f"Forward Algorithm({filepath})\n acc: {f_acc}%\n time: {f_end-f_start:.4f}",
+    ax1.set_title(
+        label=f"Forward Algorithm({filepath})\n acc: {f_acc}%\n time: {f_end-f_start:.4f}",
+        fontsize=15,
     )
+    ax1.set_xlabel("Predicted model", fontsize=14)
+    ax1.set_ylabel("Actual model", fontsize=14)
+    ax1.xaxis.tick_top()
     ax2 = fig.add_subplot(1, 2, 2)
     sns.heatmap(v_cm, cmap="binary", annot=True, cbar=False, square=True, ax=ax2)
-    ax2.set(
-        xlabel="Predicted model",
-        ylabel="Actual model",
-        title=f"Viterbi Algorithm({filepath})\n acc: {v_acc}%\n time: {v_end-v_start:.4f}",
+    ax2.set_title(
+        label=f"Viterbi Algorithm({filepath})\n acc: {v_acc}%\n time: {v_end-v_start:.4f}",
+        fontsize=15,
     )
-    plt.savefig("figs/" + f"{filepath}_heatmap.png")
+    ax2.set_xlabel("Predicted model", fontsize=14)
+    ax2.set_ylabel("Actual model", fontsize=14)
+
+    ax2.xaxis.tick_top()
+    # plt.savefig("figs/" + f"{filepath}_heatmap.png")
     plt.tight_layout()
     plt.show()
     plt.close()

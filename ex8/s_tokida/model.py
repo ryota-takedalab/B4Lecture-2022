@@ -65,10 +65,13 @@ class HMM:
         Returns:
             cm (pandas.core.frame.DataFrame): confusion matrix
         """
-
+        # print(self.answer_models)  いっぱいあるから、set型にしてる
         labels = list(set(self.answer_models))
+        labels = list(map(lambda x: x + 1, labels))
+
         cm = confusion_matrix(self.answer_models, models, labels=labels)
-        cm = pd.DataFrame(cm)
+        cm = pd.DataFrame(cm, index=labels, columns=labels)
+
         return cm
 
     def calc_accuracy(self, models):
