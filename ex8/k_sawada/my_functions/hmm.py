@@ -57,6 +57,8 @@ class HMM:
         Returns:
             float:
                 likelihoods
+            ndarray, axis=(time):
+                most plausible states
         """
         length = len(outputs)
         psi_probability = np.zeros((length, self.states))
