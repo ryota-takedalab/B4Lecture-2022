@@ -63,13 +63,13 @@ class HMM:
         psi_states = np.zeros((length, self.states), dtype=np.int32)
 
         # base stage
-        psi_probabiolity[0] = self.initial_state_probability * \
+        psi_probability[0] = self.initial_state_probability * \
             self.output_probability[:, outputs[0]]
         # psi_states[0] is already zeros
 
         # recursion stage
         for t in range(1, length):
-            psi_probabiolity[t] = \
+            psi_probability[t] = \
                 np.max(
                     self.transition_probability *
                     psi_probabiolity[t - 1, np.newaxis], axis=1) * \
