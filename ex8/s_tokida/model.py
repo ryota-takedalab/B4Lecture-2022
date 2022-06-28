@@ -65,7 +65,6 @@ class HMM:
         Returns:
             cm (pandas.core.frame.DataFrame): confusion matrix
         """
-        # print(self.answer_models)  いっぱいあるから、set型にしてる
         labels = list(set(self.answer_models))
         labels = list(map(lambda x: x + 1, labels))
 
