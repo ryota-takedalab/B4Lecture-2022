@@ -26,7 +26,7 @@ class HMM:
             models (ndarray):predicted models
         """
 
-        NUM, LEN = self.output.shape
+        NUM, LEN = self.output.shape  # 出力系列数, 観測回数 (100, 100)
         models = np.zeros(NUM)
 
         for i in range(NUM):
