@@ -90,7 +90,7 @@ class HMM:
             acc(float): accuracy rate[%]
         """
 
-        acc = np.sum(self.answer_models == models) / self.answer_models.shape[0]
+        acc = np.sum(self.answer_models == models) / self.answer_models.shape[0] * 100
         return acc
 
 
