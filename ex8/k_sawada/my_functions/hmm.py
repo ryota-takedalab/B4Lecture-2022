@@ -42,8 +42,7 @@ class HMM:
         
         # recursion stage
         for t in range(1, length):
-            alpha[t] = (self.transition_probability @
-                        alpha[t - 1].reshape((self.states, 1))).flatten() * \
+            alpha[t] = (alpha[t - 1] @ self.transition_probability) * \
                 self.output_probability[:, outputs[t]]
         return np.sum(alpha[-1])
     
@@ -61,7 +60,7 @@ class HMM:
         """
         length = len(outputs)
         psi_probabiolity = np.zeros((length, self.states))
-        psi_states = np.zeros((length, self.states))
+        psi_states = np.zeros((length, self.states), dtype=np.int32)
 
         # base stage
         psi_probabiolity[0] = self.initial_state_probability * \
@@ -73,10 +72,15 @@ class HMM:
             psi_probabiolity[t] = \
                 np.max(
                     self.transition_probability *
-                    psi_probabiolity[t - 1].reshape(self.states, 1), axis=1) * \
+                    psi_probabiolity[t - 1, np.newaxis], axis=1) * \
                 self.output_probability[:, [outputs[t]]].flatten()
             psi_states[t] = \
                 np.argmax(
                     self.transition_probability *
-                    psi_probabiolity[t - 1].reshape(self.states, 1), axis=1)
-        return np.max(psi_probabiolity[-1])
+                    psi_probabiolity[t - 1, np.newaxis], axis=1)
+        # most plausible states
+        hidden_states = np.zeros(length, dtype=np.int32)
+        hidden_states[-1] = np.argmax(psi_probabiolity[-1])
+        for t in reversed(range(length - 1)):
+            hidden_states[t] = psi_states[t + 1, hidden_states[t + 1]]
+        return np.max(psi_probabiolity[-1]), hidden_states

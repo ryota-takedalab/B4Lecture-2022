@@ -53,7 +53,8 @@ def main():
             forward_likelihoods[i, j] = hmms[i].forward(output[j])
         middle_time = time.time()
         for j in range(n_series):
-            viterbi_likelihoods[i, j] = hmms[i].viterbi(output[j])
+            viterbi_likelihoods[i, j], hidden_states = hmms[i].viterbi(output[j])
+            # print(hidden_states)
         end_time = time.time()
         
         # process time
