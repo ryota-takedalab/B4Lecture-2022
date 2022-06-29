@@ -74,12 +74,12 @@ class HMM:
             psi_probability[t] = \
                 np.max(
                     self.transition_probability *
-                    psi_probability[t - 1, np.newaxis], axis=1) * \
+                    psi_probability[t - 1, :, np.newaxis], axis=0) * \
                 self.output_probability[:, [outputs[t]]].flatten()
             psi_states[t] = \
                 np.argmax(
                     self.transition_probability *
-                    psi_probability[t - 1, np.newaxis], axis=1)
+                    psi_probability[t - 1, :, np.newaxis], axis=0)
         # most plausible states
         hidden_states = np.zeros(length, dtype=np.int32)
         hidden_states[-1] = np.argmax(psi_probability[-1])
