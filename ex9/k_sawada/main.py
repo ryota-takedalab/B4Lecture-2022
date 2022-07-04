@@ -23,7 +23,7 @@ LABELS = 10  # number of labels to classify
 HIDDEN_UNITS = 128
 # https://qiita.com/everylittle/items/ba821e93d275a421ca2b
 DATA_LENGTH = 4096
-SPLIT_SEED = 0
+SPLIT_SEED = 1
 
 
 def get_length_info():
@@ -113,26 +113,33 @@ def main():
     ans_test = np_utils.to_categorical(ans_test)
 
     # convert to a feature
-    x_train = wav2spectrogram(x_train)[:, :20, :]
-    x_test = wav2spectrogram(x_test)[:, :20, :]
+    # x_train = wav2spectrogram(x_train)[:, :20, :]
+    # x_test = wav2spectrogram(x_test)[:, :20, :]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.imshow(x_train[0])
-    plt.savefig("a.png")
-    print(x_train.shape)
+    tmp_train = []
+    tmp_test = []
+    for i in range(len(x_train)):
+        tmp_train.append(librosa.feature.mfcc(x_train[i]))
+    for i in range(len(x_test)):
+        tmp_test.append(librosa.feature.mfcc(x_test[i]))
+    x_train = np.array(tmp_train)
+    x_test = np.array(tmp_test)
+
+    # preview
+    if (False):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.imshow(x_train[0])
+        # plt.savefig("a.png")
     
-    ## x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], x_train.shape[2], 1))
-    ## x_test = x_test.reshape((x_test.shape[0], x_test.shape[1], x_test.shape[2], 1))
+    print(x_train.shape)
     input_shape = x_train.shape[1:]
+
+    # create model
     model = models.Sequential()
     # https://www.tensorflow.org/guide/keras/masking_and_padding?hl=ja
     model.add(layers.Masking(input_shape=input_shape, mask_value=-1.0))
     model.add(layers.LSTM(HIDDEN_UNITS, input_shape=input_shape, return_sequences=False))
-    ## model.add(layers.Conv2D(HIDDEN_UNITS, kernel_size=(4, 4), input_shape=(input_shape[0], input_shape[1], 1), activation="relu", padding="same"))
-    ## model.add(layers.MaxPooling2D(pool_size=(4, 4), padding="same"))
-    ## model.add(layers.Conv2D(HIDDEN_UNITS, kernel_size=(4, 4), activation="relu", padding="same"))
-    ## model.add(layers.Flatten())
     model.add(layers.Dense(LABELS))
     model.add(layers.Activation("softmax"))
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics = ['accuracy'])
@@ -144,24 +151,35 @@ def main():
                                 mode='min')
     ]
 
-    # モデルを学習させる
-    model.fit(x_train, ans_train,
-              epochs=1000,
-              batch_size=4096,
-              shuffle=True,
-              validation_data=(x_test, ans_test),
-              callbacks=fit_callbacks,
-              )
+    # train
+    epochs = 1000
+    result = model.fit(x_train, ans_train,
+                       epochs=epochs,
+                       batch_size=512,
+                       shuffle=True,
+                       validation_data=(x_test, ans_test),
+                       callbacks=fit_callbacks)
 
     # save model
     now = datetime.datetime.now()
-    model.save_weights(f"keras_model/model_weight{now}.hdf5")
+    model.save_weights(f"keras_model/{now}model_weight.hdf5")
     model_arc_json = model.to_json()
-    open(f"keras_model/model_architecture{now}.json", mode='w').write(model_arc_json)
+    open(f"keras_model/{now}model_architecture.json", mode='w').write(model_arc_json)
 
-    # テストデータの損失を確認しておく
+    # output score
     score = model.evaluate(x_test, ans_test, verbose=0)
     print('test xentropy:', score)
+
+    # plot train history
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_title(f"train history\nlast val_acc: {result.history['val_accuracy'][-1]:4f}")
+    ax.plot(result.history["accuracy"], label="training")
+    ax.plot(result.history["val_accuracy"], label="validation")
+    ax.set_xlabel("epochs")
+    ax.set_ylabel("accuracy")
+    ax.legend()
+    plt.savefig(f"keras_model/{now}result.png")
 
 
 if __name__ == '__main__':
