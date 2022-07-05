@@ -54,8 +54,8 @@ def main():
     x = np.array(tmp_test)
 
     # load model
-    model_arc_filename="./keras_model/2022-07-05 23:25:48.287827model_architecture.json"
-    model_weight_filename="./keras_model/2022-07-05 23:25:48.287827model_weight.hdf5"
+    model_arc_filename="./trained_model/2022-07-05 23:25:48.287827model_architecture.json"
+    model_weight_filename="./trained_model/2022-07-05 23:25:48.287827model_weight.hdf5"
     model_arc_str = open(model_arc_filename).read()
     model = models.model_from_json(model_arc_str)
     model.load_weights(model_weight_filename)
