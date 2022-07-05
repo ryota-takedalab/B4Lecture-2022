@@ -1,7 +1,6 @@
 import argparse
 import pickle
 import time
-from turtle import title
 
 import numpy as np
 import seaborn as sns
@@ -48,9 +47,7 @@ def main():
     v_models = hmm.viterbi_algorithm()
     v_end = time.time()
     v_cm = hmm.calc_cm(v_models)
-    # v_cm.rename(columns=lambda s: s + 1, index=lambda s: s + 1)
     v_acc = hmm.calc_accuracy(v_models)
-    # print(v_cm.index)  # RangeIndex(start=0, stop=5, step=1)
 
     # plot
     fig = plt.figure(figsize=(10, 6))
@@ -74,7 +71,7 @@ def main():
     ax2.set_ylabel("Actual model", fontsize=14)
 
     ax2.xaxis.tick_top()
-    # plt.savefig("figs/" + f"{filepath}_heatmap.png")
+    plt.savefig("figs/" + f"{filepath}_heatmap.png")
     plt.tight_layout()
     plt.show()
     plt.close()
