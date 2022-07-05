@@ -94,6 +94,29 @@ def load_wav_train():
     return wav, label
 
 
+def expand_data(x, ans):
+    """augument data by add latency
+
+    Args:
+        x (ndarray, axis=(data, ...)): input data
+        ans (ndarray, axis=(data)): answer label
+    Returns:
+        ndarray, axis=(data, ...): expanded data
+        ndarray, axis=(data): expanded answer label
+    """
+    latency = [0, 50, 100, 150, 200]
+    x_shape = x.shape
+    count = x_shape[0]
+    series_length = x_shape[1]
+
+    # new data array
+    new_x = np.zeros_like(np.concatenate([x for i in range(len(latency))], axis=0))
+    new_ans = np.concatenate([ans for i in range(len(latency))], axis=0)
+    for i in range(len(latency)):
+        new_x[i * count: (i + 1) * count, latency[i]: ] = x[:, 0: series_length - latency[i]]
+    return new_x, new_ans
+
+
 def wav2spectrogram(wav):
     _, _, specs = signal.spectrogram(wav)
     #_, _, specs = signal.spectrogram(wav, fs=SAMPLING_RATE, nperseg=128, nfft=2**11)
@@ -103,6 +126,8 @@ def wav2spectrogram(wav):
 def main():
     # read data
     x, answer_label = load_wav_train()
+    # expand data
+    x, answer_label = expand_data(x, answer_label)
     
     # split data for train and test
     x_train, x_test = train_test_split(x, random_state=SPLIT_SEED)
@@ -116,6 +141,7 @@ def main():
     # x_train = wav2spectrogram(x_train)[:, :20, :]
     # x_test = wav2spectrogram(x_test)[:, :20, :]
 
+    # convert to mfcc
     tmp_train = []
     tmp_test = []
     for i in range(len(x_train)):
