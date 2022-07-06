@@ -1,3 +1,13 @@
+<script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<script type="text/x-mathjax-config">
+ MathJax.Hub.Config({
+ tex2jax: {
+ inlineMath: [['$', '$'] ],
+ displayMath: [ ['$$','$$'], ["\\[","\\]"] ]
+ }
+ });
+</script>
 # 第八回B4輪講課題
 
 ## 課題の概要
@@ -26,7 +36,7 @@
     - 工夫したところ，苦労したところの解決策はぜひ共有しましょう
   - 発表者は当日にランダムに決めるので**スライドは全員準備**
   - 結果の考察，応用先の調査など
-  - 発表資料は研究室NASにアップロードしておくこと (`/procyon/all/発表資料\B4輪講/2021/<発表日>`)
+  - 発表資料は研究室NASにアップロードしておくこと (`/procyon/all/発表資料\B4輪講/2022/<発表日>`)
 
 ## ヒント
 
@@ -40,20 +50,31 @@ data = pickle.load(open("data1.pickle", "rb"))
 
 pickleデータの中にはディクショナリ型でデータが入っている
 
+- 前提
+  - モデルが$k$個ある (それぞれ$m_0, m_1, ..., m_n$とする)
+  - すべてのモデルは, $l$個の状態($s_0, s_1, ..., s_l$)と$n$個の出力記号($o_0, o_1, ..., o_n$)をもつ
+  - 各モデルから, 時刻$0$から$t$までの状態遷移&出力をさせて, 長さが$t$となる出力系列を合計$p$個作る
+  - その際, どの出力系列がどのモデルから生成されたかを記録しておく  
+  <br>
 - dataの階層構造
 
 ```
-data
-├─answer_models # 出力系列を生成したモデル（正解ラベル）
-├─output # 出力系列
-└─models # 定義済みHMM
-  ├─PI # 初期確率
-  ├─A # 状態遷移確率行列
-  └─B # 出力確率
+data #[次元数, 次元数, ...]
+├─answer_models # 出力系列を生成したモデル（正解ラベル）[p]
+├─output # 出力系列 [p, t]
+└─models # 定義済みHMM 
+  ├─PI # 初期確率 [k, l, 1]
+  ├─A # 状態遷移確率行列 [k, l, l]
+  └─B # 出力確率 [k, l, n]
 ```
 
-- data1とdata2はLeft-to-Right HMM
-- data3とdata4はErgodic HMM
+- 具体的な中身の例
+  - answer_models = [1 3 3 4 0 2 4 ...] は, 「出力系列$0$は$m_1$から, 出力系列$1$は$m_3$から, 出力系列$2$は$m_3$から, ... 生成された」
+  - output[0] = [0 4 2 ... 4 0 0] は, 「出力系列$0$の出力は$o_0, o_4, o_2, ..., o_4, o_0, o_0$」だった」
+  - PI[0] = [[1] [0] [0]] は, $m_0$の初期確率, つまり「$m_0$の初期状態が$s_0$である確率が$1$, $s_1$の確率が$0$, $s_2$の確率が$0$」  
+  <br>
+- data1とdata3はLeft-to-Right HMM
+- data2とdata4はErgodic HMM
 
 ## 結果例
 

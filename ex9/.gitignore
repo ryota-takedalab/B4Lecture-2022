@@ -1,0 +1,5 @@
+free-spoken-digit-dataset
+keras_model
+result.csv
+test_truth.csv
+make_label.py
