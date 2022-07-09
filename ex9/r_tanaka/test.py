@@ -3,7 +3,10 @@ import librosa
 import pandas as pd
 import numpy as np
 import pickle
+import matplotlib.pyplot as plt
+import seaborn as sns
 from sklearn.metrics import accuracy_score  # モデル評価用(正答率)
+from sklearn.metrics import confusion_matrix
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -79,8 +82,16 @@ def main():
 
     # モデル評価
     # acc : 正答率
-    acc = accuracy_score(Y_test, y_pred)
-    print('Acc :', acc)
+    acc = accuracy_score(Y_test, y_pred) * 100
+    print('Acc :', acc, '%')
+
+    plt.figure()
+    cm_fwd = confusion_matrix(y_pred, Y_test)
+    sns.heatmap(cm_fwd, cmap='Blues', square=True)
+    plt.title(f"Result \n (Acc. {acc:.5f}%)")
+    plt.xlabel("Ground truth")
+    plt.ylabel("Predicted")
+    plt.savefig("confusion_matrix.png")
 
 
 if __name__ == "__main__":
