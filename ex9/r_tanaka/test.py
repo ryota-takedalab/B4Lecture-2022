@@ -1,4 +1,3 @@
-import IPython
 import librosa
 import pandas as pd
 import numpy as np
@@ -9,16 +8,6 @@ from sklearn.metrics import accuracy_score  # モデル評価用(正答率)
 from sklearn.metrics import confusion_matrix
 import warnings
 warnings.filterwarnings('ignore')
-
-
-def display(*dfs, head=True):
-    """データフレームを整えて出力
-
-    Args:
-        head (bool, optional): _description_. Defaults to True.
-    """
-    for df in dfs:
-        IPython.display.display(df.head() if head else df)
 
 
 def feature_extraction(path_list):
@@ -33,7 +22,10 @@ def feature_extraction(path_list):
 
     load_data = (lambda path: librosa.load(path)[0])
 
+    # ファイルリストから該当のwavデータを読み込み、リストに格納する
     data = list(map(load_data, path_list))
+
+    # MFCC13次元の平均を特徴量として抽出
     features = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data])
 
     return features
@@ -47,21 +39,21 @@ def main():
     Y_test = np.array(test["label"].values)
 
     # 学習済みモデルの読み込み
-    with open('model_acc:0.9259259259259259.pickle', mode='rb') as f:  # with構文でファイルパスとバイナリ読み来みモードを設定
+    with open('model/model_acc95972.pickle', mode='rb') as f:  # with構文でファイルパスとバイナリ読み来みモードを設定
         model = pickle.load(f)                  # オブジェクトをデシリアライズ
 
-    # バリデーションデータの予測 (予測クラス(0~9)を返す)
+    # テストデータの分類
     y_pred_prob = model.predict(X_test)
     y_pred = np.argmax(y_pred_prob, axis=1)  # 一番大きい予測確率のクラスを予測クラスに
 
-    # 真値と予測値の表示
+    # 真値と推定値の表示
     df_pred = pd.DataFrame({'true value': Y_test, 'predicted value': y_pred})
     print("Display true and predicted values")
     print("---------------------------------")
     print(df_pred)
     print("---------------------------------")
 
-    # 真値と予測確率の表示
+    # 真値と推定確率の表示
     df_pred_prob = pd.DataFrame({'true label': Y_test,
                                  'P(0)': y_pred_prob[:, 0],
                                  'P(1)': y_pred_prob[:, 1],
@@ -85,6 +77,7 @@ def main():
     acc = accuracy_score(Y_test, y_pred) * 100
     print('Acc :', acc, '%')
 
+    # 混合行列をプロット
     plt.figure()
     cm_fwd = confusion_matrix(y_pred, Y_test)
     sns.heatmap(cm_fwd, cmap='Blues', square=True)
