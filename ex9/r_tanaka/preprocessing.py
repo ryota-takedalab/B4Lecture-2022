@@ -1,6 +1,7 @@
 import librosa
 import pandas as pd
 import numpy as np
+from functools import partial
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -42,16 +43,32 @@ def feature_extraction(path_list):
 
     # data augmentation
     data_add_white_noise = list((map(add_white_noise, data)))
-    data_shift_sound = list(map(shift_sound, data))
     data_stretch_sound = list(map(stretch_sound, data))
+    mapfunc1 = partial(librosa.effects.pitch_shift, sr=22050, n_steps=1)
+    data_pitch_shift_up1 = list(map(mapfunc1, data))
+    mapfunc2 = partial(librosa.effects.pitch_shift, sr=22050, n_steps=-1)
+    data_pitch_shift_down1 = list(map(mapfunc2, data))
+    mapfunc3 = partial(librosa.effects.pitch_shift, sr=22050, n_steps=2)
+    data_pitch_shift_up2 = list(map(mapfunc3, data))
+    mapfunc4 = partial(librosa.effects.pitch_shift, sr=22050, n_steps=-2)
+    data_pitch_shift_down2 = list(map(mapfunc4, data))
 
     # MFCC13次元の平均を特徴量として抽出
     features = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data])
     features_add_white_noise = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_add_white_noise])
-    features_shift_sound = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_shift_sound])
     features_stretch_sound = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_stretch_sound])
+    features_pitch_shift_up1 = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_pitch_shift_up1])
+    features_pitch_shift_down1 = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_pitch_shift_down1])
+    features_pitch_shift_up2 = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_pitch_shift_up2])
+    features_pitch_shift_down2 = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_pitch_shift_down2])
 
-    features = np.concatenate((features, features_add_white_noise, features_shift_sound, features_stretch_sound))
+    features = np.concatenate((features,
+                               features_add_white_noise,
+                               features_stretch_sound,
+                               features_pitch_shift_up1,
+                               features_pitch_shift_down1,
+                               features_pitch_shift_up2,
+                               features_pitch_shift_down2))
 
     return features
 
@@ -62,7 +79,7 @@ def main():
     # 学習データの特徴抽出
     X_train = feature_extraction(training["path"].values)
     labels = np.array(training["label"].values)
-    Y_train = np.concatenate((labels, labels, labels, labels))
+    Y_train = np.concatenate((labels, labels, labels, labels, labels, labels, labels))
 
     np.save('X_train', X_train)
     np.save('Y_train', Y_train)

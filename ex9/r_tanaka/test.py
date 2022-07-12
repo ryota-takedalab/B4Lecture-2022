@@ -39,7 +39,7 @@ def main():
     Y_test = np.array(test["label"].values)
 
     # 学習済みモデルの読み込み
-    with open('model/model_acc95972.pickle', mode='rb') as f:  # with構文でファイルパスとバイナリ読み来みモードを設定
+    with open('model/model_acc95185.pickle', mode='rb') as f:  # with構文でファイルパスとバイナリ読み来みモードを設定
         model = pickle.load(f)                  # オブジェクトをデシリアライズ
 
     # テストデータの分類
