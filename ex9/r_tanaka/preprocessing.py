@@ -28,17 +28,18 @@ def stretch_sound(x, rate=1.1):
 
 def feature_extraction(path_list):
     """
-    wavファイルのリストから特徴抽出を行い, リストで返す
-    扱う特徴量はMFCC13次元の平均（0次は含めない）
+    Extract features using a list of wav files and return them as a list.
+    The feature handled is the average of 13 MFCC dimensions (not including zero-order).
+
     Args:
-        path_list: 特徴抽出するファイルのパスリスト
+        path_list(np.ndarray): path list of files from which to extract features.
     Returns:
-        features: 特徴量
+        np.ndarray: extracted features.
     """
 
     load_data = (lambda path: librosa.load(path)[0])
 
-    # ファイルリストから該当のwavデータを読み込み、リストに格納する
+    # read wav data using the file list and stores them in the list
     data = list(map(load_data, path_list))
 
     # data augmentation
@@ -53,7 +54,7 @@ def feature_extraction(path_list):
     mapfunc4 = partial(librosa.effects.pitch_shift, sr=22050, n_steps=-2)
     data_pitch_shift_down2 = list(map(mapfunc4, data))
 
-    # MFCC13次元の平均を特徴量として抽出
+    # extract the average of 13 MFCC dimensions as features
     features = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data])
     features_add_white_noise = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_add_white_noise])
     features_stretch_sound = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data_stretch_sound])
@@ -74,13 +75,14 @@ def feature_extraction(path_list):
 
 
 def main():
-    # データの読み込み
+    # load training data
     training = pd.read_csv("training.csv")
-    # 学習データの特徴抽出
+    # extract features of training data
     X_train = feature_extraction(training["path"].values)
     labels = np.array(training["label"].values)
     Y_train = np.concatenate((labels, labels, labels, labels, labels, labels, labels))
 
+    # save preprosessed training data
     np.save('X_train', X_train)
     np.save('Y_train', Y_train)
 

@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import accuracy_score  # モデル評価用(正答率)
+from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 import warnings
 warnings.filterwarnings('ignore')
@@ -12,20 +12,21 @@ warnings.filterwarnings('ignore')
 
 def feature_extraction(path_list):
     """
-    wavファイルのリストから特徴抽出を行い, リストで返す
-    扱う特徴量はMFCC13次元の平均（0次は含めない）
+    Extract features using a list of wav files and return them as a list.
+    The feature handled is the average of 13 MFCC dimensions (not including zero-order).
+
     Args:
-        path_list: 特徴抽出するファイルのパスリスト
+        path_list(np.ndarray): path list of files from which to extract features.
     Returns:
-        features: 特徴量
+        np.ndarray: extracted features.
     """
 
     load_data = (lambda path: librosa.load(path)[0])
 
-    # ファイルリストから該当のwavデータを読み込み、リストに格納する
+    # read wav data using the file list and stores them in the list
     data = list(map(load_data, path_list))
 
-    # MFCC13次元の平均を特徴量として抽出
+    # extract the average of 13 MFCC dimensions as features
     features = np.array([np.mean(librosa.feature.mfcc(y=y, n_mfcc=13), axis=1) for y in data])
 
     return features
@@ -33,27 +34,27 @@ def feature_extraction(path_list):
 
 def main():
 
-    # テストデータ
+    # test data
     test = pd.read_csv("test_truth.csv")
     X_test = feature_extraction(test["path"].values)
     Y_test = np.array(test["label"].values)
 
-    # 学習済みモデルの読み込み
-    with open('model/model_acc95185.pickle', mode='rb') as f:  # with構文でファイルパスとバイナリ読み来みモードを設定
-        model = pickle.load(f)                  # オブジェクトをデシリアライズ
+    # load trained model
+    with open('model/model_acc95185.pickle', mode='rb') as f:
+        model = pickle.load(f)  # serialize objects
 
-    # テストデータの分類
+    # classify test data
     y_pred_prob = model.predict(X_test)
-    y_pred = np.argmax(y_pred_prob, axis=1)  # 一番大きい予測確率のクラスを予測クラスに
+    y_pred = np.argmax(y_pred_prob, axis=1)
 
-    # 真値と推定値の表示
+    # display true and estimated values
     df_pred = pd.DataFrame({'true value': Y_test, 'predicted value': y_pred})
     print("Display true and predicted values")
     print("---------------------------------")
     print(df_pred)
     print("---------------------------------")
 
-    # 真値と推定確率の表示
+    # display true values and estimation probability
     df_pred_prob = pd.DataFrame({'true label': Y_test,
                                  'P(0)': y_pred_prob[:, 0],
                                  'P(1)': y_pred_prob[:, 1],
@@ -72,12 +73,11 @@ def main():
     print(df_pred_prob)
     print("-----------------------------------------------")
 
-    # モデル評価
-    # acc : 正答率
+    # # evaluate models
     acc = accuracy_score(Y_test, y_pred) * 100
     print('Acc :', acc, '%')
 
-    # 混合行列をプロット
+    # plot confusion matrix
     plt.figure()
     cm_fwd = confusion_matrix(y_pred, Y_test)
     sns.heatmap(cm_fwd, cmap='Blues', square=True)
